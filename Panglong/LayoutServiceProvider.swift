@@ -7,7 +7,7 @@
 
 import KeyboardKit
 
-class LayoutService: KeyboardLayout.DeviceBasedService {
+class LayoutServiceProvider: KeyboardLayout.DeviceBasedService {
     
     init(extraKey: ExtraKey) {
         self.extraKey = extraKey
@@ -24,7 +24,6 @@ class LayoutService: KeyboardLayout.DeviceBasedService {
         case none
         case emojiIfNeeded
         case keyboardSwitcher
-        case localeSwitcher
         case url(String)
     }
     
@@ -38,8 +37,6 @@ class LayoutService: KeyboardLayout.DeviceBasedService {
             layout.tryInsertEmojiButton()
         case .keyboardSwitcher:
             layout.tryInsert(.nextKeyboard)
-        case .localeSwitcher:
-            layout.tryInsert(.nextLocale)
         case .url(let string):
             layout.tryInsert(.url(.init(string: string), id: nil))
         }
@@ -63,3 +60,4 @@ private extension KeyboardLayout {
         itemRows.insert(button, after: .space, atRow: bottomRowIndex)
     }
 }
+

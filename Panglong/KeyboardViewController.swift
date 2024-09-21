@@ -5,56 +5,62 @@
 //  Created by NorHsangPha BoonHse on 18/9/2567 BE.
 //
 
-import UIKit
+import KeyboardKit
+import ISEmojiView
+import SwiftUI
 
-class KeyboardViewController: UIInputViewController {
-
-    @IBOutlet var nextKeyboardButton: UIButton!
-    
-    override func updateViewConstraints() {
-        super.updateViewConstraints()
-        
-        // Add custom view sizing constraints here
-    }
+class KeyboardViewController: KeyboardInputViewController {
     
     override func viewDidLoad() {
+        setupServices(extraKey: .emojiIfNeeded)
+        setupState()
+        setUpISEmojiView()
+        
         super.viewDidLoad()
-        
-        // Perform custom UI setup here
-        self.nextKeyboardButton = UIButton(type: .system)
-        
-        self.nextKeyboardButton.setTitle(NSLocalizedString("Next Keyboard", comment: "Title for 'Next Keyboard' button"), for: [])
-        self.nextKeyboardButton.sizeToFit()
-        self.nextKeyboardButton.translatesAutoresizingMaskIntoConstraints = false
-        
-        self.nextKeyboardButton.addTarget(self, action: #selector(handleInputModeList(from:with:)), for: .allTouchEvents)
-        
-        self.view.addSubview(self.nextKeyboardButton)
-        
-        self.nextKeyboardButton.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
-        self.nextKeyboardButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
     }
     
-    override func viewWillLayoutSubviews() {
-        self.nextKeyboardButton.isHidden = !self.needsInputModeSwitchKey
-        super.viewWillLayoutSubviews()
-    }
-    
-    override func textWillChange(_ textInput: UITextInput?) {
-        // The app is about to change the document's contents. Perform any preparation here.
-    }
-    
-    override func textDidChange(_ textInput: UITextInput?) {
-        // The app has just changed the document's contents, the document context has been updated.
+    override func viewWillSetupKeyboard() {
+        super.viewWillSetupKeyboard()
         
-        var textColor: UIColor
-        let proxy = self.textDocumentProxy
-        if proxy.keyboardAppearance == UIKeyboardAppearance.dark {
-            textColor = UIColor.white
-        } else {
-            textColor = UIColor.black
-        }
-        self.nextKeyboardButton.setTitleColor(textColor, for: [])
+        setup { controller in KeyboardView(
+            state: controller.state,
+            services: controller.services,
+            buttonContent: { $0.view },
+            buttonView: { $0.view },
+            emojiKeyboard: { $0.view },
+            toolbar: { params in params.view }
+        )}
     }
+}
 
+extension KeyboardViewController {
+    
+    func setupServices(extraKey: LayoutServiceProvider.ExtraKey) {
+        
+        services.autocompleteService = AutocompleteServiceProvider(context: state.autocompleteContext)
+        
+        services.layoutService = LayoutServiceProvider(extraKey: extraKey)
+        services.styleProvider = StyleProvider(keyboardContext: state.keyboardContext)
+        services.calloutService = CalloutProvider()
+    }
+    
+    func setupState() {
+        state.keyboardContext.spaceLongPressBehavior = .moveInputCursor
+        
+        state.keyboardContext.localePresentationLocale = .current
+        state.keyboardContext.locale = KeyboardLocale.english.locale
+    }
+    
+    func setUpISEmojiView() {
+        let keyboardSettings = KeyboardSettings(bottomType: .categories)
+        keyboardSettings.isShowPopPreview = true
+        keyboardSettings.needToShowAbcButton = true
+        keyboardSettings.needToShowDeleteButton = true
+        keyboardSettings.updateRecentEmojiImmediately = true
+        
+        let emojiView = EmojiView(keyboardSettings: keyboardSettings)
+        let bottomView = emojiView.subviews.last?.subviews.last
+        let collecitonViewToSuperViewTrailingConstraint = bottomView?.value(forKey: "collecitonViewToSuperViewTrailingConstraint") as? NSLayoutConstraint
+        collecitonViewToSuperViewTrailingConstraint?.priority = .defaultLow
+    }
 }

@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		DD7E30202C99FA5B00922A79 /* Panglong.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DD7E30192C99FA5B00922A79 /* Panglong.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DDF879612C9F6FFC00A98A90 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DDF879602C9F6FFC00A98A90 /* KeyboardKit */; };
+		DDF879642C9F711C00A98A90 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DDF879632C9F711C00A98A90 /* ISEmojiView */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		DD7E2FF62C99F82300922A79 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,17 +27,59 @@
 			remoteGlobalIDString = DD7E2FE12C99F82100922A79;
 			remoteInfo = Panglong_iKeyboard;
 		};
+		DD7E301E2C99FA5B00922A79 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD7E2FDA2C99F82100922A79 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD7E30182C99FA5B00922A79;
+			remoteInfo = Panglong;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		DD7E30252C99FA5B00922A79 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				DD7E30202C99FA5B00922A79 /* Panglong.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		DD7E2FE22C99F82100922A79 /* Panglong_iKeyboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Panglong_iKeyboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD7E2FF52C99F82300922A79 /* Panglong_iKeyboardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Panglong_iKeyboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD7E2FFF2C99F82300922A79 /* Panglong_iKeyboardUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Panglong_iKeyboardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD7E30192C99FA5B00922A79 /* Panglong.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Panglong.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DD7E30242C99FA5B00922A79 /* Exceptions for "Panglong" folder in "Panglong" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DD7E30182C99FA5B00922A79 /* Panglong */;
+		};
+		DDF879562C9F4B5F00A98A90 /* Exceptions for "Panglong_iKeyboard" folder in "Panglong" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Fonts/Shan.ttf,
+			);
+			target = DD7E30182C99FA5B00922A79 /* Panglong */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DD7E2FE42C99F82100922A79 /* Panglong_iKeyboard */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DDF879562C9F4B5F00A98A90 /* Exceptions for "Panglong_iKeyboard" folder in "Panglong" target */,
+			);
 			path = Panglong_iKeyboard;
 			sourceTree = "<group>";
 		};
@@ -43,6 +91,14 @@
 		DD7E30022C99F82300922A79 /* Panglong_iKeyboardUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Panglong_iKeyboardUITests;
+			sourceTree = "<group>";
+		};
+		DD7E301A2C99FA5B00922A79 /* Panglong */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DD7E30242C99FA5B00922A79 /* Exceptions for "Panglong" folder in "Panglong" target */,
+			);
+			path = Panglong;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -69,6 +125,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DD7E30162C99FA5B00922A79 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDF879642C9F711C00A98A90 /* ISEmojiView in Frameworks */,
+				DDF879612C9F6FFC00A98A90 /* KeyboardKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -78,6 +143,8 @@
 				DD7E2FE42C99F82100922A79 /* Panglong_iKeyboard */,
 				DD7E2FF82C99F82300922A79 /* Panglong_iKeyboardTests */,
 				DD7E30022C99F82300922A79 /* Panglong_iKeyboardUITests */,
+				DD7E301A2C99FA5B00922A79 /* Panglong */,
+				DD7E302A2C9A063000922A79 /* Frameworks */,
 				DD7E2FE32C99F82100922A79 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,8 +155,16 @@
 				DD7E2FE22C99F82100922A79 /* Panglong_iKeyboard.app */,
 				DD7E2FF52C99F82300922A79 /* Panglong_iKeyboardTests.xctest */,
 				DD7E2FFF2C99F82300922A79 /* Panglong_iKeyboardUITests.xctest */,
+				DD7E30192C99FA5B00922A79 /* Panglong.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DD7E302A2C9A063000922A79 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -102,10 +177,12 @@
 				DD7E2FDE2C99F82100922A79 /* Sources */,
 				DD7E2FDF2C99F82100922A79 /* Frameworks */,
 				DD7E2FE02C99F82100922A79 /* Resources */,
+				DD7E30252C99FA5B00922A79 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DD7E301F2C99FA5B00922A79 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				DD7E2FE42C99F82100922A79 /* Panglong_iKeyboard */,
@@ -163,6 +240,30 @@
 			productReference = DD7E2FFF2C99F82300922A79 /* Panglong_iKeyboardUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		DD7E30182C99FA5B00922A79 /* Panglong */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DD7E30212C99FA5B00922A79 /* Build configuration list for PBXNativeTarget "Panglong" */;
+			buildPhases = (
+				DD7E30152C99FA5B00922A79 /* Sources */,
+				DD7E30162C99FA5B00922A79 /* Frameworks */,
+				DD7E30172C99FA5B00922A79 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				DD7E301A2C99FA5B00922A79 /* Panglong */,
+			);
+			name = Panglong;
+			packageProductDependencies = (
+				DDF879602C9F6FFC00A98A90 /* KeyboardKit */,
+				DDF879632C9F711C00A98A90 /* ISEmojiView */,
+			);
+			productName = Panglong;
+			productReference = DD7E30192C99FA5B00922A79 /* Panglong.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -184,6 +285,9 @@
 						CreatedOnToolsVersion = 16.0;
 						TestTargetID = DD7E2FE12C99F82100922A79;
 					};
+					DD7E30182C99FA5B00922A79 = {
+						CreatedOnToolsVersion = 16.0;
+					};
 				};
 			};
 			buildConfigurationList = DD7E2FDD2C99F82100922A79 /* Build configuration list for PBXProject "Panglong_iKeyboard" */;
@@ -195,6 +299,10 @@
 			);
 			mainGroup = DD7E2FD92C99F82100922A79;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				DDF8795F2C9F6FFC00A98A90 /* XCLocalSwiftPackageReference "../KeyboardKit" */,
+				DDF879622C9F711C00A98A90 /* XCRemoteSwiftPackageReference "ISEmojiView" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DD7E2FE32C99F82100922A79 /* Products */;
 			projectDirPath = "";
@@ -203,6 +311,7 @@
 				DD7E2FE12C99F82100922A79 /* Panglong_iKeyboard */,
 				DD7E2FF42C99F82300922A79 /* Panglong_iKeyboardTests */,
 				DD7E2FFE2C99F82300922A79 /* Panglong_iKeyboardUITests */,
+				DD7E30182C99FA5B00922A79 /* Panglong */,
 			);
 		};
 /* End PBXProject section */
@@ -223,6 +332,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		DD7E2FFD2C99F82300922A79 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DD7E30172C99FA5B00922A79 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -253,6 +369,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DD7E30152C99FA5B00922A79 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -265,6 +388,11 @@
 			isa = PBXTargetDependency;
 			target = DD7E2FE12C99F82100922A79 /* Panglong_iKeyboard */;
 			targetProxy = DD7E30002C99F82300922A79 /* PBXContainerItemProxy */;
+		};
+		DD7E301F2C99FA5B00922A79 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD7E30182C99FA5B00922A79 /* Panglong */;
+			targetProxy = DD7E301E2C99FA5B00922A79 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -396,6 +524,9 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Panglong-iKeyboard-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = PanglongKeyboard;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -404,9 +535,9 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -414,10 +545,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.noernova.Panglong-iKeyboard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Debug;
@@ -435,6 +567,9 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Panglong-iKeyboard-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = PanglongKeyboard;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -443,9 +578,9 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
@@ -453,10 +588,11 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.noernova.Panglong-iKeyboard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
 			name = Release;
@@ -469,16 +605,17 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7YT4A3YW62;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.noernova.Panglong-iKeyboardTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Panglong_iKeyboard.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Panglong_iKeyboard";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
@@ -492,16 +629,17 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7YT4A3YW62;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.noernova.Panglong-iKeyboardTests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Panglong_iKeyboard.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Panglong_iKeyboard";
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
@@ -514,16 +652,17 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7YT4A3YW62;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.noernova.Panglong-iKeyboardUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Panglong_iKeyboard;
 				XROS_DEPLOYMENT_TARGET = 2.0;
 			};
@@ -536,18 +675,82 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7YT4A3YW62;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.noernova.Panglong-iKeyboardUITests";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = Panglong_iKeyboard;
 				XROS_DEPLOYMENT_TARGET = 2.0;
+			};
+			name = Release;
+		};
+		DD7E30222C99FA5B00922A79 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7YT4A3YW62;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Panglong/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Panglong;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.noernova.Panglong-iKeyboard.Panglong";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DD7E30232C99FA5B00922A79 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7YT4A3YW62;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Panglong/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Panglong;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.noernova.Panglong-iKeyboard.Panglong";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -590,7 +793,46 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		DD7E30212C99FA5B00922A79 /* Build configuration list for PBXNativeTarget "Panglong" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DD7E30222C99FA5B00922A79 /* Debug */,
+				DD7E30232C99FA5B00922A79 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		DDF8795F2C9F6FFC00A98A90 /* XCLocalSwiftPackageReference "../KeyboardKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../KeyboardKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		DDF879622C9F711C00A98A90 /* XCRemoteSwiftPackageReference "ISEmojiView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/isaced/ISEmojiView.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.3.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DDF879602C9F6FFC00A98A90 /* KeyboardKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KeyboardKit;
+		};
+		DDF879632C9F711C00A98A90 /* ISEmojiView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DDF879622C9F711C00A98A90 /* XCRemoteSwiftPackageReference "ISEmojiView" */;
+			productName = ISEmojiView;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = DD7E2FDA2C99F82100922A79 /* Project object */;
 }
