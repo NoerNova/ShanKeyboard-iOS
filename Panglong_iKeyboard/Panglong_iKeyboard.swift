@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct Panglong_iKeyboardApp: App {
+struct Panglong_iKeyboard: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -25,7 +25,7 @@ struct Panglong_iKeyboardApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeScreen()
         }
         .modelContainer(sharedModelContainer)
     }
