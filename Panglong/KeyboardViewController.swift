@@ -41,6 +41,8 @@ extension KeyboardViewController {
         services.layoutService = LayoutServiceProvider()
         services.styleProvider = StyleProvider(keyboardContext: state.keyboardContext)
         services.calloutService = CalloutProvider()
+        services.keyboardBehavior = BehaviorProvider(keyboardContext: state.keyboardContext)
+        services.actionHandler = ActionHandlerProvider(controller: self)
     }
     
     func setupState() {
