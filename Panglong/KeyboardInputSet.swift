@@ -20,7 +20,7 @@ public extension InputSet {
         .init(rows: [
             .init(chars: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]),
             .init(phone: "-/:;()$&@”", pad: "@#$&*()’”"),
-            .init(phone: ".,?!’", pad: "%-+=/;:!?")
+            .init(phone: ".,?!’၊။", pad: "%-+=/;:!?")
         ])
     }
 }

@@ -12,7 +12,7 @@ import SwiftUI
 class KeyboardViewController: KeyboardInputViewController {
     
     override func viewDidLoad() {
-        setupServices(extraKey: .emojiIfNeeded)
+        setupServices()
         setupState()
         
         super.viewDidLoad()
@@ -34,11 +34,11 @@ class KeyboardViewController: KeyboardInputViewController {
 
 extension KeyboardViewController {
     
-    func setupServices(extraKey: LayoutServiceProvider.ExtraKey) {
+    func setupServices() {
         
         services.autocompleteService = AutocompleteServiceProvider(context: state.autocompleteContext)
         
-        services.layoutService = LayoutServiceProvider(extraKey: extraKey)
+        services.layoutService = LayoutServiceProvider()
         services.styleProvider = StyleProvider(keyboardContext: state.keyboardContext)
         services.calloutService = CalloutProvider()
     }

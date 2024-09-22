@@ -6,11 +6,13 @@
 //
 
 import KeyboardKit
+import SwiftUI
 
-class LayoutServiceProvider: KeyboardLayout.DeviceBasedService {
+class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
     
-    init(extraKey: ExtraKey) {
-        self.extraKey = extraKey
+    var localeKey: String = KeyboardLocale.english.id
+    
+    init() {
         super.init(
             alphabeticInputSet: .panglong,
             numericInputSet: .shanNumeric,
@@ -18,46 +20,67 @@ class LayoutServiceProvider: KeyboardLayout.DeviceBasedService {
         )
     }
     
-    let extraKey: ExtraKey
+    public lazy var iPadService: KeyboardLayoutService = CustomIPadService(alphabeticInputSet: .panglong, numericInputSet: .shanNumeric, symbolicInputSet: .symbolic(currencies: ["$", "฿", "¥"]))
     
-    enum ExtraKey {
-        case none
-        case emojiIfNeeded
-        case keyboardSwitcher
-        case url(String)
-    }
+    public lazy var iPhoneService: KeyboardLayoutService = CustomIPhoneService(alphabeticInputSet: .panglong, numericInputSet: .shanNumeric, symbolicInputSet: .symbolic(currencies: ["$", "฿", "¥"]))
     
     override func keyboardLayout(for context: KeyboardContext) -> KeyboardLayout {
-        let layout = super.keyboardLayout(for: context)
-        
-        switch extraKey {
-        case .none:
-            break
-        case .emojiIfNeeded:
-            layout.tryInsertEmojiButton()
-        case .keyboardSwitcher:
-            layout.tryInsert(.nextKeyboard)
-        case .url(let string):
-            layout.tryInsert(.url(.init(string: string), id: nil))
-        }
-        
+        let service = keyboardLayoutService(for: context)
+        let layout = service.keyboardLayout(for: context)
         return layout
     }
     
-}
-
-private extension KeyboardLayout {
-    func tryInsert(_ action: KeyboardAction) {
-        guard let item = tryCreateBottomRowItem(for: action) else { return }
-        itemRows.insert(item, before: .space, atRow: bottomRowIndex)
+    func keyboardLayoutService(
+        for context: KeyboardContext
+    ) -> KeyboardLayoutService {
+        switch context.deviceType {
+        case .phone: iPhoneService
+        case .pad: iPadService
+        default: iPhoneService
+        }
     }
     
-    func tryInsertEmojiButton() {
-        guard let row = bottomRow else { return }
-        let hasEmoji = row.contains(where: { $0.action == .keyboardType(.emojis) })
-        if hasEmoji { return }
-        guard let button = tryCreateBottomRowItem(for: .keyboardType(.emojis)) else { return }
-        itemRows.insert(button, after: .space, atRow: bottomRowIndex)
-    }
+    
+//    let extraKey: ExtraKey
+//    
+//    enum ExtraKey {
+//        case none
+//        case emojiIfNeeded
+//        case keyboardSwitcher
+//        case url(String)
+//    }
+    
+//    override func keyboardLayout(for context: KeyboardContext) -> KeyboardLayout {
+//        let layout = super.keyboardLayout(for: context)
+//        
+//        switch extraKey {
+//        case .none:
+//            break
+//        case .emojiIfNeeded:
+//            layout.tryInsertEmojiButton()
+//        case .keyboardSwitcher:
+//            layout.tryInsert(.nextKeyboard)
+//        case .url(let string):
+//            layout.tryInsert(.url(.init(string: string), id: nil))
+//        }
+//        
+//        return layout
+//    }
+
 }
+
+//private extension KeyboardLayout {
+//    func tryInsert(_ action: KeyboardAction) {
+//        guard let item = tryCreateBottomRowItem(for: action) else { return }
+//        itemRows.insert(item, before: .space, atRow: bottomRowIndex)
+//    }
+//    
+//    func tryInsertEmojiButton() {
+//        guard let row = bottomRow else { return }
+//        let hasEmoji = row.contains(where: { $0.action == .keyboardType(.emojis) })
+//        if hasEmoji { return }
+//        guard let button = tryCreateBottomRowItem(for: .keyboardType(.emojis)) else { return }
+//        itemRows.insert(button, after: .space, atRow: bottomRowIndex)
+//    }
+//}
 
