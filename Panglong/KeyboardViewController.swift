@@ -14,7 +14,6 @@ class KeyboardViewController: KeyboardInputViewController {
     override func viewDidLoad() {
         setupServices(extraKey: .emojiIfNeeded)
         setupState()
-        setUpISEmojiView()
         
         super.viewDidLoad()
     }
@@ -49,18 +48,5 @@ extension KeyboardViewController {
         
         state.keyboardContext.localePresentationLocale = .current
         state.keyboardContext.locale = KeyboardLocale.english.locale
-    }
-    
-    func setUpISEmojiView() {
-        let keyboardSettings = KeyboardSettings(bottomType: .categories)
-        keyboardSettings.isShowPopPreview = true
-        keyboardSettings.needToShowAbcButton = true
-        keyboardSettings.needToShowDeleteButton = true
-        keyboardSettings.updateRecentEmojiImmediately = true
-        
-        let emojiView = EmojiView(keyboardSettings: keyboardSettings)
-        let bottomView = emojiView.subviews.last?.subviews.last
-        let collecitonViewToSuperViewTrailingConstraint = bottomView?.value(forKey: "collecitonViewToSuperViewTrailingConstraint") as? NSLayoutConstraint
-        collecitonViewToSuperViewTrailingConstraint?.priority = .defaultLow
     }
 }
