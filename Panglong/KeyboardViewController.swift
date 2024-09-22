@@ -50,5 +50,6 @@ extension KeyboardViewController {
         
         state.keyboardContext.localePresentationLocale = .current
         state.keyboardContext.locale = KeyboardLocale.shan.locale
+        state.keyboardContext.isAutocapitalizationEnabled = false
     }
 }
