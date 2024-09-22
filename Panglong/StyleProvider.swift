@@ -20,15 +20,6 @@ class StyleProvider: KeyboardStyle.StandardProvider {
             return KeyboardFont.system(size: buttonFontSize(for: action))
         }
     }
-    
-    override func buttonText(for action: KeyboardAction) -> String? {
-        switch action {
-        case .keyboardType(.numeric): "123"
-        case .keyboardType(.alphabetic): "ၵၶင"
-        case .keyboardType(.symbolic): "#+="
-        default: action.standardButtonText(for: keyboardContext)
-        }
-    }
 }
 
 private extension KeyboardAction {

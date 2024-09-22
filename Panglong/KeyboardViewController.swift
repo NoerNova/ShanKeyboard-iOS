@@ -47,6 +47,6 @@ extension KeyboardViewController {
         state.keyboardContext.spaceLongPressBehavior = .moveInputCursor
         
         state.keyboardContext.localePresentationLocale = .current
-        state.keyboardContext.locale = KeyboardLocale.english.locale
+        state.keyboardContext.locale = KeyboardLocale.shan.locale
     }
 }

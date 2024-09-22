@@ -10,7 +10,7 @@ import SwiftUI
 
 class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
     
-    var localeKey: String = KeyboardLocale.english.id
+    var localeKey: String = KeyboardLocale.shan.id
     
     init() {
         super.init(
