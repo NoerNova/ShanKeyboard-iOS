@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		DD7E30202C99FA5B00922A79 /* Panglong.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DD7E30192C99FA5B00922A79 /* Panglong.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DD7FA8792CA019A000DA2A76 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD7FA8782CA019A000DA2A76 /* ISEmojiView */; };
+		DDCFA8102CA0CB8400307FD4 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DDCFA80F2CA0CB8400307FD4 /* ISEmojiView */; };
 		DDF879612C9F6FFC00A98A90 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DDF879602C9F6FFC00A98A90 /* KeyboardKit */; };
 /* End PBXBuildFile section */
 
@@ -129,6 +130,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DDCFA8102CA0CB8400307FD4 /* ISEmojiView in Frameworks */,
 				DD7FA8792CA019A000DA2A76 /* ISEmojiView in Frameworks */,
 				DDF879612C9F6FFC00A98A90 /* KeyboardKit in Frameworks */,
 			);
@@ -259,6 +261,7 @@
 			packageProductDependencies = (
 				DDF879602C9F6FFC00A98A90 /* KeyboardKit */,
 				DD7FA8782CA019A000DA2A76 /* ISEmojiView */,
+				DDCFA80F2CA0CB8400307FD4 /* ISEmojiView */,
 			);
 			productName = Panglong;
 			productReference = DD7E30192C99FA5B00922A79 /* Panglong.appex */;
@@ -818,6 +821,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		DD7FA8782CA019A000DA2A76 /* ISEmojiView */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ISEmojiView;
+		};
+		DDCFA80F2CA0CB8400307FD4 /* ISEmojiView */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ISEmojiView;
 		};
