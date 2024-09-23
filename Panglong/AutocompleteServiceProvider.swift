@@ -106,10 +106,6 @@ class AutocompleteServiceProvider: AutocompleteService {
     private func updateCurrentInput(with text: String) {
         let tokenizedWords = Tokenizer.tokenize(text)
         currentInput = tokenizedWords.joined()
-        
-        if currentInput.count > 20 {
-            
-        }
     }
     
     private func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
@@ -141,7 +137,7 @@ class AutocompleteServiceProvider: AutocompleteService {
             suggestions.append(contentsOf: dictionarySuggestions)
         }
         
-        // Don't attach the full prefix in Shan language (or non-space languages)
+        // Don't attach the full prefix in Shan language
         // Just return the last word suggestion
         return Array(suggestions.prefix(context.suggestionsDisplayCount))
     }
