@@ -9,7 +9,7 @@ import KeyboardKit
 
 class CustomIPhoneService: KeyboardLayout.iPhoneService {
         
-    open override func itemSizeWidth(
+    override func itemSizeWidth(
         for action: KeyboardAction,
         row: Int,
         index: Int,
@@ -64,8 +64,9 @@ private extension CustomIPhoneService {
     
     func shouldUpdateUpperCharacterInputWidth(_ row: Int, for context: KeyboardContext) -> Bool {
         let isCharacter = context.keyboardType.isAlphabetic
-        let isUpperRow = row == 0 || row == 1 || row == 2
-        guard isCharacter && isUpperRow else { return false }
+//        let isUpperRow = row == 0 || row == 1 || row == 2 || row == 3
+        let isURL = context.textDocumentProxy.keyboardType == .URL
+        guard isCharacter && !isURL else { return false }
         return true
     }
     
