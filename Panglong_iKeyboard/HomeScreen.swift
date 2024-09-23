@@ -19,7 +19,7 @@ struct HomeScreen: View {
                 Text(text)
                     .foregroundStyle(Color.primary)
                 TextField(
-                    "Typing...", text: $text
+                    "Normal Text...", text: $text
                 )
                 .frame(height: 48)
                 .padding(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6))
@@ -28,6 +28,50 @@ struct HomeScreen: View {
                     RoundedRectangle(cornerRadius: 5)
                         .stroke(lineWidth: 1.0)
                 )
+                TextField(
+                    "Email Text...", text: $text
+                )
+                .frame(height: 48)
+                .padding(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6))
+                .cornerRadius(5)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(lineWidth: 1.0)
+                )
+                .keyboardType(.emailAddress)
+                TextField(
+                    "URL Text...", text: $text
+                )
+                .frame(height: 48)
+                .padding(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6))
+                .cornerRadius(5)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(lineWidth: 1.0)
+                )
+                .keyboardType(.URL)
+                TextField(
+                    "Web Text...", text: $text
+                )
+                .frame(height: 48)
+                .padding(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6))
+                .cornerRadius(5)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(lineWidth: 1.0)
+                )
+                .keyboardType(.webSearch)
+                TextField(
+                    "Twitter Text...", text: $text
+                )
+                .frame(height: 48)
+                .padding(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6))
+                .cornerRadius(5)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(lineWidth: 1.0)
+                )
+                .keyboardType(.twitter)
         }
         .frame(width: 300, height: 300)
     }
