@@ -47,18 +47,16 @@ private extension KeyboardContext {
 
 private extension UITextDocumentProxy {
     
-    /// The word segment before the cursor location, if any.
-    var customCurrentWordPreCursorPart: String? {
-        guard let textBeforeCursor = documentContextBeforeInput else { return nil }
-        let tokenizedWords = Tokenizer.tokenize(textBeforeCursor)
-        return tokenizedWords.last // Get the last token before the cursor
-    }
-
-    /// The word segment after the cursor location, if any.
-    var customCurrentWordPostCursorPart: String? {
-        guard let textAfterCursor = documentContextAfterInput else { return nil }
-        let tokenizedWords = Tokenizer.tokenize(textAfterCursor)
-        return tokenizedWords.first // Get the first token after the cursor
+    var customCurrentWord: String? {
+        let pre = currentWordPreCursorPart
+        let post = currentWordPostCursorPart
+        if pre == nil && post == nil { return nil }
+        
+        let prePost = (pre ?? "") + (post ?? "")
+        
+        /// prevent text replacement delete all text line
+        let tokenizer = Tokenizer()
+        return tokenizer.tokenize(prePost).last
     }
     
     func customInsertAutocompleteSuggestion(
@@ -71,7 +69,7 @@ private extension UITextDocumentProxy {
     }
     
     func customReplaceCurrentWordPreCursorPart(with replacement: String) {
-        if let text = customCurrentWordPreCursorPart {
+        if let text = customCurrentWord {
             deleteBackward(times: (text as NSString).length)
         }
         insertText(replacement)

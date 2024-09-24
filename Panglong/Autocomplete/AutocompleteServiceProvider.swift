@@ -7,7 +7,6 @@
 
 import Foundation
 import KeyboardKit
-import UIKit
 
 class AutocompleteServiceProvider: AutocompleteService {
     init(context: AutocompleteContext) {
@@ -16,7 +15,6 @@ class AutocompleteServiceProvider: AutocompleteService {
         loadDictionaryWords()
         loadIgnoredWords()
         loadLearnedWords()
-        buildMarkovChain()
     }
 
     private var context: AutocompleteContext
@@ -45,7 +43,6 @@ class AutocompleteServiceProvider: AutocompleteService {
         learnedWords.append(word)
         incrementWordFrequency(word)
         saveLearnedWords()
-        addToMarkovChain(word)
     }
     
     func removeIgnoredWord(_ word: String) {
@@ -65,7 +62,7 @@ class AutocompleteServiceProvider: AutocompleteService {
     ) async throws -> [Autocomplete.Suggestion] {
         guard text.count > 0 else { return [] }
         updateCurrentInput(with: text)
-        return getSuggestions(for: text)
+        return getSuggestions(for: currentInput)
     }
 
     func nextCharacterPredictions(
@@ -81,66 +78,53 @@ class AutocompleteServiceProvider: AutocompleteService {
             }
         }
         
-        // Use Markov chain for additional predictions
-        let markovPredictions = predictNextCharacters(for: text)
-        for (char, prob) in markovPredictions {
-            predictions[char, default: 0] += prob * 10 // Adjust weight as needed
-        }
-        
         let total = predictions.values.reduce(0, +)
         return predictions.mapValues { $0 / total }
     }
     
-    func selectSuggestion(_ suggestion: Autocomplete.Suggestion) {
-        // Learn only the suggested word, not the full input
-        learnWord(suggestion.text)
-        
-        // Update the current input only with the last word (if relevant)
-        let tokenizedWords = Tokenizer.tokenize(currentInput)
-        if let lastWord = tokenizedWords.last, suggestion.text.hasPrefix(lastWord) {
-            updateCurrentInput(with: suggestion.text)
-        }
-    }
-
-    
     private func updateCurrentInput(with text: String) {
-        let tokenizedWords = Tokenizer.tokenize(text)
-        currentInput = tokenizedWords.joined()
+        currentInput = text
     }
     
     private func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
-        let tokenizedWords = Tokenizer.tokenize(text)
-        let lastWord = tokenizedWords.last ?? ""
-        var suggestions: [Autocomplete.Suggestion] = []
-        
-        // Get context-aware suggestions from the Markov chain
-        let contextWords = Array(tokenizedWords.dropLast(1))
-        let markovSuggestions = predictNextWords(after: contextWords, startingWith: lastWord, maxSuggestions: context.suggestionsDisplayCount)
-        suggestions.append(contentsOf: markovSuggestions.map { Autocomplete.Suggestion(text: $0, type: .regular) })
-        
-        // Add user's most used words
-        let userSuggestions = userWordFrequency.keys
-            .filter { $0.hasPrefix(lastWord) && !ignoredWords.contains($0) }
-            .sorted { userWordFrequency[$0]! > userWordFrequency[$1]! }
-            .prefix(context.suggestionsDisplayCount - suggestions.count)
-            .map { Autocomplete.Suggestion(text: $0, type: .unknown) }
-        
-        suggestions.append(contentsOf: userSuggestions)
-        
-        // Add more suggestions from the dictionary if needed
-        if suggestions.count < context.suggestionsDisplayCount {
-            let dictionarySuggestions = dictionaryWords
-                .filter { $0.hasPrefix(lastWord) && !ignoredWords.contains($0) }
-                .prefix(context.suggestionsDisplayCount - suggestions.count)
-                .map { Autocomplete.Suggestion(text: $0, type: .regular) }
-            
-            suggestions.append(contentsOf: dictionarySuggestions)
-        }
-        
-        // Don't attach the full prefix in Shan language
-        // Just return the last word suggestion
-        return Array(suggestions.prefix(context.suggestionsDisplayCount))
-    }
+         var suggestions: [Autocomplete.Suggestion] = []
+         
+         // Add user's most used words
+         let userSuggestions = userWordFrequency.keys
+             .filter { $0.hasPrefix(text) && !ignoredWords.contains($0) }
+             .sorted { userWordFrequency[$0]! > userWordFrequency[$1]! }
+             .prefix(context.suggestionsDisplayCount - suggestions.count)
+             .map { Autocomplete.Suggestion(text: $0, type: .unknown) }
+         
+         suggestions.append(contentsOf: userSuggestions)
+         
+         // Add dictionary suggestions
+         let dictionarySuggestions = dictionaryWords
+             .filter { $0.hasPrefix(text) && !ignoredWords.contains($0) }
+             .prefix(context.suggestionsDisplayCount - suggestions.count)
+             .map { Autocomplete.Suggestion(text: $0, type: .regular) }
+         
+         suggestions.append(contentsOf: dictionarySuggestions)
+         
+         // Add autocorrect suggestion if needed
+         if let autocorrect = findClosestMatch(for: text), autocorrect != text {
+             suggestions.insert(Autocomplete.Suggestion(text: autocorrect, type: .autocorrect), at: 0)
+         }
+         
+//         // Combine suggestions with the existing input
+//         if tokenizedWords.count > 1 {
+//             var prefix = tokenizedWords.dropLast().joined(separator: "")
+//             if prefix.count > 10 { prefix = "" }
+//             suggestions = suggestions.map { suggestion in
+//                 Autocomplete.Suggestion(
+//                     text: prefix + suggestion.text,
+//                     type: suggestion.type
+//                 )
+//             }
+//         }
+         
+         return Array(suggestions.prefix(context.suggestionsDisplayCount))
+     }
 
     
     private func findClosestMatch(for word: String) -> String? {
@@ -176,60 +160,6 @@ class AutocompleteServiceProvider: AutocompleteService {
         saveUserWords()
     }
     
-    private func buildMarkovChain() {
-        let allWords = Array(dictionaryWords) + learnedWords
-        for i in 0..<allWords.count {
-            let startIndex = max(0, i - chainOrder)
-            let context = allWords[startIndex..<i].joined()
-            let word = allWords[i]
-            markovChain[context, default: [:]][word, default: 0] += 1
-        }
-    }
-    
-    private func addToMarkovChain(_ word: String) {
-        let words = Tokenizer.tokenize(currentInput) + [word]
-        for i in chainOrder..<words.count {
-            let context = words[i-chainOrder..<i].joined()
-            markovChain[context, default: [:]][words[i], default: 0] += 1
-        }
-    }
-    
-    private func predictNextWords(after context: [String], startingWith prefix: String, maxSuggestions: Int) -> [String] {
-        var suggestions: [String] = []
-        let contextString = context.suffix(chainOrder - 1).joined()
-        
-        if let nextWords = markovChain[contextString] {
-            let sortedWords = nextWords.sorted { $0.value > $1.value }
-            for (word, _) in sortedWords {
-                if word.hasPrefix(prefix) && !suggestions.contains(word) {
-                    suggestions.append(word)
-                    if suggestions.count >= maxSuggestions {
-                        break
-                    }
-                }
-            }
-        }
-        
-        return suggestions
-    }
-    
-    private func predictNextCharacters(for text: String) -> [Character: Double] {
-        var predictions: [Character: Double] = [:]
-        let words = Tokenizer.tokenize(text)
-        let context = words.suffix(chainOrder - 1).joined()
-        
-        if let nextWords = markovChain[context] {
-            let total = Double(nextWords.values.reduce(0, +))
-            for (word, count) in nextWords {
-                if let firstChar = word.first {
-                    predictions[firstChar, default: 0] += Double(count) / total
-                }
-            }
-        }
-        
-        return predictions
-    }
-    
     private func loadUserWords() {
         userWordFrequency = UserDefaults.standard.object(forKey: "UserWordFrequency") as? [String: Int] ?? [:]
     }
@@ -261,3 +191,4 @@ class AutocompleteServiceProvider: AutocompleteService {
         UserDefaults.standard.set(learnedWords, forKey: "LearnedWords")
     }
 }
+
