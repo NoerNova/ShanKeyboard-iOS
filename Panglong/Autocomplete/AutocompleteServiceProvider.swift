@@ -63,6 +63,12 @@ class AutocompleteServiceProvider: AutocompleteService {
         guard text.count > 0 else { return [] }
         updateCurrentInput(with: text)
         return getSuggestions(for: currentInput)
+            .map {
+                let autocorrect = $0.isAutocorrect && context.isAutocorrectEnabled
+                var suggestion = $0
+                suggestion.type = autocorrect ? .autocorrect : $0.type
+                return suggestion
+            }
     }
 
     func nextCharacterPredictions(
@@ -105,23 +111,27 @@ class AutocompleteServiceProvider: AutocompleteService {
              .map { Autocomplete.Suggestion(text: $0, type: .regular) }
          
          suggestions.append(contentsOf: dictionarySuggestions)
-         
-         // Add autocorrect suggestion if needed
-         if let autocorrect = findClosestMatch(for: text), autocorrect != text {
-             suggestions.insert(Autocomplete.Suggestion(text: autocorrect, type: .autocorrect), at: 0)
-         }
-         
-//         // Combine suggestions with the existing input
-//         if tokenizedWords.count > 1 {
-//             var prefix = tokenizedWords.dropLast().joined(separator: "")
-//             if prefix.count > 10 { prefix = "" }
-//             suggestions = suggestions.map { suggestion in
-//                 Autocomplete.Suggestion(
-//                     text: prefix + suggestion.text,
-//                     type: suggestion.type
-//                 )
-//             }
-//         }
+    
+        
+        if suggestions.count < 3 {
+            
+            // Display current user word
+            suggestions.insert(Autocomplete.Suggestion(text: text, type: .unknown), at: 0)
+            
+            // Fallback suggestions that are random but closely match the input text
+            let fallbackSuggestions = dictionaryWords
+                .filter { $0.contains(text) || $0.commonPrefix(with: text).count >= 2 } // Words sharing a common prefix or containing the input
+                .shuffled()
+                .prefix(3 - suggestions.count)
+                .map { Autocomplete.Suggestion(text: $0, type: .regular) }
+            
+            suggestions.append(contentsOf: fallbackSuggestions)
+            }
+        
+        // Add autocorrect suggestion if needed
+        if let autocorrect = findClosestMatch(for: text), autocorrect != text {
+            suggestions.insert(Autocomplete.Suggestion(text: autocorrect, type: .autocorrect), at: 1)
+        }
          
          return Array(suggestions.prefix(context.suggestionsDisplayCount))
      }
