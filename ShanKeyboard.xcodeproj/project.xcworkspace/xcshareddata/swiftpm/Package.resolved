@@ -1,0 +1,15 @@
+{
+  "originHash" : "929a81f35485bea53f6731f27b7ffea2785d49d9490c6545c5be76b919d35154",
+  "pins" : [
+    {
+      "identity" : "isemojiview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/NoerNova/ISEmojiView.git",
+      "state" : {
+        "branch" : "custom",
+        "revision" : "816c2089a076caf68ad7b502fb41bf632bb93763"
+      }
+    }
+  ],
+  "version" : 3
+}
