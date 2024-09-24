@@ -9,7 +9,7 @@ import KeyboardKit
 import ISEmojiView
 import SwiftUI
 
-class KeyboardViewController: KeyboardInputViewController {
+class KeyboardViewController: PanglongKeyboardInputViewController {
     
     override func viewDidLoad() {
         setupServices()
