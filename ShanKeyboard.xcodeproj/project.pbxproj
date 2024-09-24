@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DD1085532CA348FA00FD0107 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD1085522CA348FA00FD0107 /* ISEmojiView */; };
-		DD1085552CA3491B00FD0107 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD1085542CA3491B00FD0107 /* ISEmojiView */; };
+		DD10856D2CA359AD00FD0107 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD10856C2CA359AD00FD0107 /* ISEmojiView */; };
+		DD10856F2CA359B700FD0107 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD10856E2CA359B700FD0107 /* ISEmojiView */; };
 		DD7E30202C99FA5B00922A79 /* Shan.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DD7E30192C99FA5B00922A79 /* Shan.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DDF879612C9F6FFC00A98A90 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DDF879602C9F6FFC00A98A90 /* KeyboardKit */; };
 /* End PBXBuildFile section */
@@ -109,7 +109,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DD1085532CA348FA00FD0107 /* ISEmojiView in Frameworks */,
+				DD10856D2CA359AD00FD0107 /* ISEmojiView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,7 +131,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DD1085552CA3491B00FD0107 /* ISEmojiView in Frameworks */,
+				DD10856F2CA359B700FD0107 /* ISEmojiView in Frameworks */,
 				DDF879612C9F6FFC00A98A90 /* KeyboardKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -191,7 +191,7 @@
 			);
 			name = ShanKeyboard;
 			packageProductDependencies = (
-				DD1085522CA348FA00FD0107 /* ISEmojiView */,
+				DD10856C2CA359AD00FD0107 /* ISEmojiView */,
 			);
 			productName = Panglong_iKeyboard;
 			productReference = DD7E2FE22C99F82100922A79 /* ShanKeyboard.app */;
@@ -261,7 +261,7 @@
 			name = Shan;
 			packageProductDependencies = (
 				DDF879602C9F6FFC00A98A90 /* KeyboardKit */,
-				DD1085542CA3491B00FD0107 /* ISEmojiView */,
+				DD10856E2CA359B700FD0107 /* ISEmojiView */,
 			);
 			productName = Panglong;
 			productReference = DD7E30192C99FA5B00922A79 /* Shan.appex */;
@@ -305,7 +305,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				DDF8795F2C9F6FFC00A98A90 /* XCLocalSwiftPackageReference "../KeyboardKit" */,
-				DD1085512CA348FA00FD0107 /* XCRemoteSwiftPackageReference "ISEmojiView" */,
+				DD10856B2CA359AD00FD0107 /* XCRemoteSwiftPackageReference "ISEmojiView" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DD7E2FE32C99F82100922A79 /* Products */;
@@ -816,7 +816,7 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		DD1085512CA348FA00FD0107 /* XCRemoteSwiftPackageReference "ISEmojiView" */ = {
+		DD10856B2CA359AD00FD0107 /* XCRemoteSwiftPackageReference "ISEmojiView" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/NoerNova/ISEmojiView.git";
 			requirement = {
@@ -827,14 +827,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		DD1085522CA348FA00FD0107 /* ISEmojiView */ = {
+		DD10856C2CA359AD00FD0107 /* ISEmojiView */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DD1085512CA348FA00FD0107 /* XCRemoteSwiftPackageReference "ISEmojiView" */;
+			package = DD10856B2CA359AD00FD0107 /* XCRemoteSwiftPackageReference "ISEmojiView" */;
 			productName = ISEmojiView;
 		};
-		DD1085542CA3491B00FD0107 /* ISEmojiView */ = {
+		DD10856E2CA359B700FD0107 /* ISEmojiView */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DD1085512CA348FA00FD0107 /* XCRemoteSwiftPackageReference "ISEmojiView" */;
+			package = DD10856B2CA359AD00FD0107 /* XCRemoteSwiftPackageReference "ISEmojiView" */;
 			productName = ISEmojiView;
 		};
 		DDF879602C9F6FFC00A98A90 /* KeyboardKit */ = {
