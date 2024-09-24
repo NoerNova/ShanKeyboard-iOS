@@ -8,6 +8,46 @@
 import KeyboardKit
 
 class CustomIPhoneService: KeyboardLayout.iPhoneService {
+    
+    /// Remove unnecessary bottomAction for Shan language
+    override func bottomActions(
+        for context: KeyboardContext
+    ) -> KeyboardAction.Row {
+        var result = KeyboardAction.Row()
+
+        let needsInputSwitch = context.needsInputModeSwitchKey
+        let needsDictation = context.needsInputModeSwitchKey
+
+        if let action = keyboardSwitchActionForBottomRow(for: context) { result.append(action) }
+        if needsInputSwitch { result.append(.nextKeyboard) }
+        if !needsInputSwitch { result.append(.keyboardType(.emojis)) }
+        let dictationReplacement = context.keyboardDictationReplacement
+        if isPortrait(context), needsDictation, let action = dictationReplacement { result.append(action) }
+        
+        /// Leave comment as template for future feature
+//        #if os(iOS) || os(tvOS) || os(visionOS)
+//        switch context.textDocumentProxy.keyboardType {
+//        case .emailAddress:
+//            result.append(.space)
+//            result.append(.character("@"))
+//            result.append(.character("."))
+//        case .URL:
+//            result.append(.character("."))
+//            result.append(.character("/"))
+//            result.append(.text(".com"))
+//        case .webSearch:
+//            result.append(.space)
+//            result.append(.character("."))
+//        default:
+//            result.append(.space)
+//        }
+//        #endif
+        result.append(.space)
+        
+        result.append(keyboardReturnAction(for: context))
+        if !isPortrait(context), needsDictation, let action = dictationReplacement { result.append(action) }
+        return result
+    }
         
     override func itemSizeWidth(
         for action: KeyboardAction,
