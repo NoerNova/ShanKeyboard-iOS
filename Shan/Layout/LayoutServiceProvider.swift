@@ -16,17 +16,23 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
         super.init(
             alphabeticInputSet: .panglong,
             numericInputSet: .shanNumeric,
-            symbolicInputSet: .symbolic(currencies: ["$", "฿", "¥"])
+            symbolicInputSet: .shanSymbolic(currencies: ["$", "฿", "¥"])
         )
     }
     
-    public lazy var iPadService: KeyboardLayoutService = CustomIPadService(alphabeticInputSet: .panglong, numericInputSet: .shanNumeric, symbolicInputSet: .symbolic(currencies: ["$", "฿", "¥"]))
+    public lazy var iPadService: KeyboardLayoutService = CustomIPadService(alphabeticInputSet: .panglong, numericInputSet: .shanNumeric, symbolicInputSet: .shanSymbolic(currencies: ["$", "฿", "¥"]))
     
-    public lazy var iPhoneService: KeyboardLayoutService = CustomIPhoneService(alphabeticInputSet: .panglong, numericInputSet: .shanNumeric, symbolicInputSet: .symbolic(currencies: ["$", "฿", "¥"]))
+    public lazy var iPhoneService: KeyboardLayoutService = CustomIPhoneService(alphabeticInputSet: .panglong, numericInputSet: .shanNumeric, symbolicInputSet: .shanSymbolic(currencies: ["$", "฿", "¥"]))
     
     override func keyboardLayout(for context: KeyboardContext) -> KeyboardLayout {
         let service = keyboardLayoutService(for: context)
         let layout = service.keyboardLayout(for: context)
+        
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            layout.tryInsertPunctuations(.character("။"))
+            layout.tryInsertPunctuations(.character("၊"))
+        }
+        
         return layout
     }
     
@@ -38,5 +44,12 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
         case .pad: iPadService
         default: iPhoneService
         }
+    }
+}
+
+private extension KeyboardLayout {
+    func tryInsertPunctuations(_ action: KeyboardAction) {
+        guard let item = tryCreateBottomRowItem(for: action) else { return }
+        itemRows.insert(item, after: .space, atRow: bottomRowIndex)
     }
 }
