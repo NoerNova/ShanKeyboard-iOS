@@ -10,12 +10,14 @@ import SwiftUI
 
 class StyleProvider: KeyboardStyle.StandardProvider {
     
+    let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+    
     override func buttonKeyboardFont(for action: KeyboardAction) -> KeyboardFont {
         switch action {
         case .character("ႂ်"):
-            return KeyboardFont.custom("Shan", size: 18)
+            return isIPad ? KeyboardFont.custom("Shan", size: 22) : KeyboardFont.custom("Shan", size: 18)
         case .character:
-            return KeyboardFont.custom("Shan", size: 22)
+            return isIPad ? KeyboardFont.custom("Shan", size: 24) : KeyboardFont.custom("Shan", size: 22)
         default:
             return KeyboardFont.system(size: buttonFontSize(for: action))
         }
