@@ -57,8 +57,12 @@
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES"
       launchAutomaticallySubstyle = "2">
-      <BuildableProductRunnable
-         runnableDebuggingMode = "0">
+      <RemoteRunnable
+         runnableDebuggingMode = "1"
+         BundleIdentifier = "com.noernova.ShanKeyboard"
+         RemotePath = "/Users/noernova/Library/Developer/CoreSimulator/Devices/8F63E64D-0008-4860-B1ED-1661C66C5CE7/data/Containers/Bundle/Application/516874A0-92F0-42FD-9860-BEEACE0AE1CD/ShanKeyboard.app">
+      </RemoteRunnable>
+      <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DD7E2FE12C99F82100922A79"
@@ -66,7 +70,7 @@
             BlueprintName = "ShanKeyboard"
             ReferencedContainer = "container:ShanKeyboard.xcodeproj">
          </BuildableReference>
-      </BuildableProductRunnable>
+      </MacroExpansion>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
