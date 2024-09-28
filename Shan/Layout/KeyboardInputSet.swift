@@ -23,4 +23,14 @@ public extension InputSet {
             .init(phone: ".,?!’၊။", pad: "%-+=/;:!?")
         ])
     }
+    
+    static func shanSymbolic(currencies: [String]) -> InputSet {
+        .init(rows: [
+            .init(phone: "[]{}#%^*+=", pad: "႑႒႓႔႕႖႗႘႙႐"),
+            .init(
+                phone: "_\\|~<>\(currencies.joined())•",
+                pad: "\(currencies.joined())_^[]{}"),
+            .init(phone: ".,?!’", pad: "§|~…\\<>!?")
+        ])
+    }
 }
