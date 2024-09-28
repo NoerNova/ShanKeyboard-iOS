@@ -28,14 +28,14 @@ I don't plan to publish this app on the App Store anytime soon. However, if anyo
 
 ## Support Me
 
-[GitHub Sponsor](https://github.com/sponsors/noernova)
+[![Sponsor on GitHub](https://gist.githubusercontent.com/cxmeel/0dbc95191f239b631c3874f4ccf114e2/raw/github_sponsor.svg)](https://github.com/sponsors/NoerNova)
 
 ## Contact
 Feel free to reach out if you have questions or if you want to contribute in any way:
 
-* Website: [noernova.com][Website]
-* Twitter: [@noer_nova][Twitter]
-* E-mail: [norhsangpha@gmail.com][Email]
+* Website: [noernova.com](https://noernova.com)
+* Twitter: [@noer_nova](https://twitter.com/noer_nova)
+* E-mail: [norhsangpha@gmail.com](mailto:norhsangpha@gmail)
 
 ## LICENSE
 MIT
