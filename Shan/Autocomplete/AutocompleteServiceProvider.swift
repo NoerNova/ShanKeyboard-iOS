@@ -128,10 +128,12 @@ class AutocompleteServiceProvider: AutocompleteService {
             suggestions.append(contentsOf: fallbackSuggestions)
             }
         
-        // Add autocorrect suggestion if needed
-        if let autocorrect = findClosestMatch(for: text), autocorrect != text {
-            suggestions.insert(Autocomplete.Suggestion(text: autocorrect, type: .autocorrect), at: 1)
-        }
+
+        // Check if autocorrect suggestion needed
+//        if let autocorrect = findClosestMatch(for: text), autocorrect != text {
+//            let autocorrectSuggestion = Autocomplete.Suggestion(text: autocorrect, type: .autocorrect)
+//            suggestions.insert(autocorrectSuggestion, at: 1)
+//        }
          
          return Array(suggestions.prefix(context.suggestionsDisplayCount))
      }
