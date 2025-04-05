@@ -15,14 +15,18 @@ class AutocompleteServiceProvider: AutocompleteService {
         loadDictionaryWords()
         loadIgnoredWords()
         loadLearnedWords()
+        buildMarkovChain()
     }
 
     private var context: AutocompleteContext
     private var userWordFrequency: [String: Int] = [:]
     private var dictionaryWords: Set<String> = []
     private var currentInput: String = ""
+    private var recentWords: [String] = []
     private var markovChain: [String: [String: Int]] = [:]
-    private let chainOrder = 2 // Order of the Markov chain
+    private let chainOrder = 2
+    private let maxRecentWords = 10
+    private let suggestionCache = NSCache<NSString, NSArray>()
     
     var locale: Locale = .current
     
@@ -62,13 +66,15 @@ class AutocompleteServiceProvider: AutocompleteService {
     ) async throws -> [Autocomplete.Suggestion] {
         guard text.count > 0 else { return [] }
         updateCurrentInput(with: text)
-        return getSuggestions(for: currentInput)
-            .map {
-                let autocorrect = $0.isAutocorrect && context.isAutocorrectEnabled
-                var suggestion = $0
-                suggestion.type = autocorrect ? .autocorrect : $0.type
-                return suggestion
-            }
+        
+        // Check cache first
+        if let cachedSuggestions = suggestionCache.object(forKey: text as NSString) as? [Autocomplete.Suggestion] {
+            return cachedSuggestions
+        }
+        
+        let suggestions = getSuggestions(for: currentInput)
+        suggestionCache.setObject(suggestions as NSArray, forKey: text as NSString)
+        return suggestions
     }
 
     func nextCharacterPredictions(
@@ -88,56 +94,131 @@ class AutocompleteServiceProvider: AutocompleteService {
         return predictions.mapValues { $0 / total }
     }
     
-    private func updateCurrentInput(with text: String) {
-        currentInput = text
+    private func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+        var suggestions: [Autocomplete.Suggestion] = []
+        
+        // Context-aware suggestions using Markov chain
+        if let contextSuggestions = getContextBasedSuggestions(for: text) {
+            suggestions.append(contentsOf: contextSuggestions)
+        }
+        
+        // User's most used words with frequency boost
+        let userSuggestions = userWordFrequency.keys
+            .filter { $0.hasPrefix(text) && !ignoredWords.contains($0) }
+            .sorted { 
+                let freq1 = userWordFrequency[$0] ?? 0
+                let freq2 = userWordFrequency[$1] ?? 0
+                return freq1 > freq2
+            }
+            .prefix(context.suggestionsDisplayCount - suggestions.count)
+            .map { Autocomplete.Suggestion(text: $0, type: .unknown) }
+        
+        suggestions.append(contentsOf: userSuggestions)
+        
+        // Dictionary suggestions with smart filtering
+        let dictionarySuggestions = dictionaryWords
+            .filter { word in
+                word.hasPrefix(text) && 
+                !ignoredWords.contains(word) &&
+                !suggestions.contains { $0.text == word }
+            }
+            .prefix(context.suggestionsDisplayCount - suggestions.count)
+            .map { Autocomplete.Suggestion(text: $0, type: .regular) }
+        
+        suggestions.append(contentsOf: dictionarySuggestions)
+        
+        // Smart fallback suggestions
+        if suggestions.count < 3 {
+            let fallbackSuggestions = getSmartFallbackSuggestions(for: text)
+            suggestions.append(contentsOf: fallbackSuggestions)
+        }
+        
+        // Enhanced autocorrect
+        if let autocorrect = findClosestMatch(for: text), autocorrect != text {
+            let autocorrectSuggestion = Autocomplete.Suggestion(text: autocorrect, type: .autocorrect)
+            if !suggestions.contains(where: { $0.text == autocorrect }) {
+                suggestions.insert(autocorrectSuggestion, at: 0)
+            }
+        }
+        
+        return Array(suggestions.prefix(context.suggestionsDisplayCount))
     }
     
-    private func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
-         var suggestions: [Autocomplete.Suggestion] = []
-         
-         // Add user's most used words
-         let userSuggestions = userWordFrequency.keys
-             .filter { $0.hasPrefix(text) && !ignoredWords.contains($0) }
-             .sorted { userWordFrequency[$0]! > userWordFrequency[$1]! }
-             .prefix(context.suggestionsDisplayCount - suggestions.count)
-             .map { Autocomplete.Suggestion(text: $0, type: .unknown) }
-         
-         suggestions.append(contentsOf: userSuggestions)
-         
-         // Add dictionary suggestions
-         let dictionarySuggestions = dictionaryWords
-             .filter { $0.hasPrefix(text) && !ignoredWords.contains($0) }
-             .prefix(context.suggestionsDisplayCount - suggestions.count)
-             .map { Autocomplete.Suggestion(text: $0, type: .regular) }
-         
-         suggestions.append(contentsOf: dictionarySuggestions)
+    private func getContextBasedSuggestions(for text: String) -> [Autocomplete.Suggestion]? {
+        guard !recentWords.isEmpty else { return nil }
+        
+        let context = recentWords.suffix(chainOrder).joined(separator: " ")
+        return markovChain[context]?
+            .filter { $0.key.hasPrefix(text) }
+            .sorted { $0.value > $1.value }
+            .prefix(3)
+            .map { Autocomplete.Suggestion(text: $0.key, type: .regular) }
+    }
     
+    private func getSmartFallbackSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+        let minPrefixLength = 2
+        let prefix = String(text.prefix(minPrefixLength))
         
-        if suggestions.count < 3 {
-            
-            // Display current user word
-            suggestions.insert(Autocomplete.Suggestion(text: text, type: .unknown), at: 0)
-            
-            // Fallback suggestions that are random but closely match the input text
-            let fallbackSuggestions = dictionaryWords
-                .filter { $0.contains(text) || $0.commonPrefix(with: text).count >= 2 } // Words sharing a common prefix or containing the input
-                .shuffled()
-                .prefix(3 - suggestions.count)
-                .map { Autocomplete.Suggestion(text: $0, type: .regular) }
-            
-            suggestions.append(contentsOf: fallbackSuggestions)
+        return dictionaryWords
+            .filter { word in
+                (word.contains(text) || word.commonPrefix(with: text).count >= minPrefixLength) &&
+                !ignoredWords.contains(word)
             }
+            .sorted { word1, word2 in
+                let score1 = calculateWordScore(word1, prefix: prefix)
+                let score2 = calculateWordScore(word2, prefix: prefix)
+                return score1 > score2
+            }
+            .prefix(3)
+            .map { Autocomplete.Suggestion(text: $0, type: .regular) }
+    }
+    
+    private func calculateWordScore(_ word: String, prefix: String) -> Double {
+        var score = 0.0
         
-
-        // Check if autocorrect suggestion needed
-//        if let autocorrect = findClosestMatch(for: text), autocorrect != text {
-//            let autocorrectSuggestion = Autocomplete.Suggestion(text: autocorrect, type: .autocorrect)
-//            suggestions.insert(autocorrectSuggestion, at: 1)
-//        }
-         
-         return Array(suggestions.prefix(context.suggestionsDisplayCount))
-     }
-
+        // Length similarity
+        score += 1.0 - Double(abs(word.count - prefix.count)) / Double(max(word.count, prefix.count))
+        
+        // Prefix match bonus
+        if word.hasPrefix(prefix) {
+            score += 0.5
+        }
+        
+        // User frequency bonus
+        if let frequency = userWordFrequency[word] {
+            score += Double(frequency) * 0.1
+        }
+        
+        return score
+    }
+    
+    private func buildMarkovChain() {
+        let allWords = Set(userWordFrequency.keys).union(dictionaryWords)
+        for word in allWords {
+            let words = word.components(separatedBy: .whitespaces)
+            
+            // Skip words that are too short to form a context
+            if words.count <= chainOrder {
+                continue
+            }
+            
+            for i in 0...(words.count - chainOrder - 1) {
+                let context = words[i..<(i + chainOrder)].joined(separator: " ")
+                let nextWord = words[i + chainOrder]
+                markovChain[context, default: [:]][nextWord, default: 0] += 1
+            }
+        }
+    }
+    
+    private func updateCurrentInput(with text: String) {
+        currentInput = text
+        if !text.isEmpty {
+            recentWords.append(text)
+            if recentWords.count > maxRecentWords {
+                recentWords.removeFirst()
+            }
+        }
+    }
     
     private func findClosestMatch(for word: String) -> String? {
         let allWords = Set(userWordFrequency.keys).union(dictionaryWords).subtracting(ignoredWords)

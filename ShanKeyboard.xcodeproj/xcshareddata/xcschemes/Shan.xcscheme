@@ -46,7 +46,7 @@
       shouldAutocreateTestPlan = "YES">
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Release"
       selectedDebuggerIdentifier = ""
       selectedLauncherIdentifier = "Xcode.IDEFoundation.Launcher.PosixSpawn"
       launchStyle = "0"
@@ -60,7 +60,7 @@
       <RemoteRunnable
          runnableDebuggingMode = "1"
          BundleIdentifier = "com.noernova.ShanKeyboard"
-         RemotePath = "/Users/noernova/Library/Developer/CoreSimulator/Devices/8F63E64D-0008-4860-B1ED-1661C66C5CE7/data/Containers/Bundle/Application/516874A0-92F0-42FD-9860-BEEACE0AE1CD/ShanKeyboard.app">
+         RemotePath = "/Users/noernova/Library/Developer/CoreSimulator/Devices/F4261FFD-251D-4404-877C-6A46456891E0/data/Containers/Bundle/Application/B6AEBB81-E080-4928-9E4F-BDEDD0EED24D/ShanKeyboard.app">
       </RemoteRunnable>
       <MacroExpansion>
          <BuildableReference
