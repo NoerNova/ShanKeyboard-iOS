@@ -7,9 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DD61B60A2DA17EBA008F5116 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD61B6092DA17EBA008F5116 /* ISEmojiView */; };
-		DD61B60D2DA17EC9008F5116 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD61B60C2DA17EC9008F5116 /* KeyboardKit */; };
 		DD7E30202C99FA5B00922A79 /* Shan.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DD7E30192C99FA5B00922A79 /* Shan.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		DDFC96182E092BD400F2CDCC /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DDFC96172E092BD400F2CDCC /* ISEmojiView */; };
+		DDFC961A2E092C1C00F2CDCC /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DDFC96192E092C1C00F2CDCC /* KeyboardKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,7 +108,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DD61B60A2DA17EBA008F5116 /* ISEmojiView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,7 +129,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DD61B60D2DA17EC9008F5116 /* KeyboardKit in Frameworks */,
+				DDFC961A2E092C1C00F2CDCC /* KeyboardKit in Frameworks */,
+				DDFC96182E092BD400F2CDCC /* ISEmojiView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -189,7 +189,6 @@
 			);
 			name = ShanKeyboard;
 			packageProductDependencies = (
-				DD61B6092DA17EBA008F5116 /* ISEmojiView */,
 			);
 			productName = Panglong_iKeyboard;
 			productReference = DD7E2FE22C99F82100922A79 /* ShanKeyboard.app */;
@@ -258,7 +257,8 @@
 			);
 			name = Shan;
 			packageProductDependencies = (
-				DD61B60C2DA17EC9008F5116 /* KeyboardKit */,
+				DDFC96172E092BD400F2CDCC /* ISEmojiView */,
+				DDFC96192E092C1C00F2CDCC /* KeyboardKit */,
 			);
 			productName = Panglong;
 			productReference = DD7E30192C99FA5B00922A79 /* Shan.appex */;
@@ -301,8 +301,8 @@
 			mainGroup = DD7E2FD92C99F82100922A79;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DD61B6082DA17EBA008F5116 /* XCLocalSwiftPackageReference "../ISEmojiView" */,
-				DD61B60B2DA17EC9008F5116 /* XCLocalSwiftPackageReference "../KeyboardKit" */,
+				DDFC96152E092B4F00F2CDCC /* XCRemoteSwiftPackageReference "KeyboardKit" */,
+				DDFC96162E092BD400F2CDCC /* XCRemoteSwiftPackageReference "ISEmojiView" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DD7E2FE32C99F82100922A79 /* Products */;
@@ -805,24 +805,34 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		DD61B6082DA17EBA008F5116 /* XCLocalSwiftPackageReference "../ISEmojiView" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../ISEmojiView;
+/* Begin XCRemoteSwiftPackageReference section */
+		DDFC96152E092B4F00F2CDCC /* XCRemoteSwiftPackageReference "KeyboardKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/NoerNova/KeyboardKit.git";
+			requirement = {
+				branch = custom;
+				kind = branch;
+			};
 		};
-		DD61B60B2DA17EC9008F5116 /* XCLocalSwiftPackageReference "../KeyboardKit" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../KeyboardKit;
+		DDFC96162E092BD400F2CDCC /* XCRemoteSwiftPackageReference "ISEmojiView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/NoerNova/ISEmojiView.git";
+			requirement = {
+				branch = custom;
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		DD61B6092DA17EBA008F5116 /* ISEmojiView */ = {
+		DDFC96172E092BD400F2CDCC /* ISEmojiView */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = DDFC96162E092BD400F2CDCC /* XCRemoteSwiftPackageReference "ISEmojiView" */;
 			productName = ISEmojiView;
 		};
-		DD61B60C2DA17EC9008F5116 /* KeyboardKit */ = {
+		DDFC96192E092C1C00F2CDCC /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = DDFC96152E092B4F00F2CDCC /* XCRemoteSwiftPackageReference "KeyboardKit" */;
 			productName = KeyboardKit;
 		};
 /* End XCSwiftPackageProductDependency section */
