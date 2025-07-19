@@ -11,15 +11,14 @@ import UIKit
 class ShanKeyboardInputViewController: KeyboardInputViewController {
     
     override var autocompleteText: String? {
-        let tokenizer = Tokenizer()
         let text = textDocumentProxy.currentWordPreCursorPart ?? ""
         
         if text.isEmpty {
             return ""
         }
         
-        if let tokenizedText = tokenizer.tokenize(text).last {
-            return tokenizedText
+        if let lastToken = Tokenizer.shared.getLastToken(from: text) {
+            return lastToken
         }
         
         return text

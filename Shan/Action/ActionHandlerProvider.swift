@@ -42,7 +42,6 @@ private extension KeyboardContext {
             tryInsertSpace: tryInsertSpage)
         #endif
     }
-    
 }
 
 private extension UITextDocumentProxy {
@@ -54,9 +53,8 @@ private extension UITextDocumentProxy {
         
         let prePost = (pre ?? "") + (post ?? "")
         
-        /// prevent text replacement delete all text line
-        let tokenizer = Tokenizer()
-        return tokenizer.tokenize(prePost).last
+        /// prevent text replacement delete all text line - USE SHARED TOKENIZER
+        return Tokenizer.shared.tokenize(prePost).last
     }
     
     func customInsertAutocompleteSuggestion(
