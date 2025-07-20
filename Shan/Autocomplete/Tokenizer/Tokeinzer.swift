@@ -127,6 +127,12 @@ public class Tokenizer {
 
 extension Tokenizer {
     
+    static let shared = Tokenizer()
+    // Shan language specific characters and patterns
+    static let shanVowels: Set = ["ႃ", "ၢ", "ႄ", "ႅ", "ေ", "ဵ", "ိ", "ီ", "ု", "ူ", "ႆ", "ႂ", "်", "ွ", "ျ", "ြ"]
+    static let shanConsonants: Set = ["ၵ", "ၷ", "ၶ", "ꧠ", "င", "ၸ", "ၹ", "သ", "ၺ", "တ", "ၻ", "ထ", "ၼ", "ꧣ", "ပ", "ၽ", "ၾ", "ပ", "ၿ", "ႀ", "မ", "ယ", "ရ", "႟", "လ", "ꩮ", "ဝ", "ႁ", "ဢ"]
+    static let shanToneMarks: Set = ["ႇ", "ႈ", "း", "ႉ", "ႊ"]
+    
     // Specialized method for keyboard autocomplete - focuses on the last token
     public func getLastToken(from text: String) -> String? {
         guard !text.isEmpty else { return nil }
