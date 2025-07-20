@@ -22,6 +22,12 @@ Since the free version of KeyboardKit doesn't support an emoji keyboard, I integ
 
 ### Text AutoComplete
 This project also implements a basic text autocomplete feature, using the word list from the [ShanNLP](https://github.com/NoerNova/ShanNLP) project. The word list isn't fully optimized for daily typing yet, but I hope to expand it when I have more time and energy.
+Current implements:
+- Words suggestion service: by learned words base on user select
+- Syllable frequency: analyze by [shannews.org](https://shannews.org) domain dataset
+- Dictionary words frequency: analyze by [shannews.org](https://shannews.org) domain dataset
+- Character base
+- Contextual base
 
 ## Publishing Plans
 I don't plan to publish this app on the App Store anytime soon. However, if anyone is interested, feel free to help with that or use this project as a foundation for developing production apps.
