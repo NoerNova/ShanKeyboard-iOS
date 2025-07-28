@@ -26,7 +26,7 @@ class CalloutProvider: Callouts.BaseService {
             case "ꩡ": return "ꩡၹ".chars.map { KeyboardAction.character($0)}
             case "ၻ": return "ၻꩦꩨ".chars.map { KeyboardAction.character($0)}
             case "သ": return "သႀ︀".chars.map { KeyboardAction.character($0)}
-            case "ႅ": return "ႅꧥ".chars.map { KeyboardAction.character($0)}
+            case "ႅ": return ["ႅ", "ꧥ"].map { KeyboardAction.character($0)}
             case "ၾ": return "ၾꧤ".chars.map { KeyboardAction.character($0)}
             case "ꩪ": return "ꩪꩧ".chars.map { KeyboardAction.character($0)}
             case "။": return "။၊".chars.map { KeyboardAction.character($0)}
