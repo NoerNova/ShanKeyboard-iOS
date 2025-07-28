@@ -15,14 +15,14 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
     init() {
         super.init(
             alphabeticInputSet: .panglong,
-            numericInputSet: .shanNumeric,
-            symbolicInputSet: .shanSymbolic(currencies: ["$", "฿", "¥"])
+            numericInputSet: .panglongNumeric,
+            symbolicInputSet: .panglongSymbolic(currencies: ["$", "฿", "¥"])
         )
     }
     
-    public lazy var iPadService: KeyboardLayoutService = CustomIPadService(alphabeticInputSet: .panglong, numericInputSet: .shanNumeric, symbolicInputSet: .shanSymbolic(currencies: ["$", "฿", "¥"]))
+    public lazy var iPadService: KeyboardLayoutService = CustomIPadService(alphabeticInputSet: .panglong, numericInputSet: .panglongNumeric, symbolicInputSet: .panglongSymbolic(currencies: ["$", "฿", "¥"]))
     
-    public lazy var iPhoneService: KeyboardLayoutService = CustomIPhoneService(alphabeticInputSet: .panglong, numericInputSet: .shanNumeric, symbolicInputSet: .shanSymbolic(currencies: ["$", "฿", "¥"]))
+    public lazy var iPhoneService: KeyboardLayoutService = CustomIPhoneService(alphabeticInputSet: .panglong, numericInputSet: .panglongNumeric, symbolicInputSet: .panglongSymbolic(currencies: ["$", "฿", "¥"]))
     
     override func keyboardLayout(for context: KeyboardContext) -> KeyboardLayout {
         let service = keyboardLayoutService(for: context)
