@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import ShanKeyboardShared
 
 struct HomeScreen: View {
     @Environment(\.modelContext) private var modelContext
@@ -15,6 +16,8 @@ struct HomeScreen: View {
     @State private var text: String = ""
     @State private var presentedLicense = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    
+    @State private var selectedLayout: KeyboardInputSetLayout = SharedUserDefaults.shared.keyboardLayout
     
     var body: some View {
         Group {
@@ -44,6 +47,7 @@ extension HomeScreen {
         List {
             Section(header: Text("Shan Keyboard")) {
                 VStack {
+                    Text("Current Layout: \(selectedLayout.rawValue)")
                     VStack {
                         Text(text)
                             .foregroundStyle(Color.primary)
@@ -64,6 +68,9 @@ extension HomeScreen {
             Section(header: Text("SETUP")) {
                 NavigationLink(destination: AddKeyboardScreen()) {
                     SettingButton(useSystemImage: true, buttonImage: "keyboard", buttonTitle: "Add Keyboard", isNavigationButton: true)
+                }
+                NavigationLink(destination: KeyboardLayoutPreferencesView()) {
+                    SettingButton(useSystemImage: true, buttonImage: "keyboard", buttonTitle: "Keyboard Layout Preferences", isNavigationButton: true)
                 }
             }
             
@@ -95,7 +102,7 @@ extension HomeScreen {
                 .frame(height: 60)
             }
             
-            Text("Copyright © 2024 NoerNova")
+            Text("Copyright © 2025 NoerNova")
                 .frame(maxWidth: .infinity, alignment: .center)
                 .foregroundColor(.gray)
         }
@@ -103,6 +110,9 @@ extension HomeScreen {
         .navigationTitle("Shan Keyboard")
         .sheet(isPresented: $presentedLicense) {
             LicenseScreen()
+        }
+        .onAppear() {
+            selectedLayout = SharedUserDefaults.shared.keyboardLayout
         }
     }
 }
