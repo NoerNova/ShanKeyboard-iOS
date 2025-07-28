@@ -7,8 +7,10 @@
 
 import KeyboardKit
 import SwiftUI
+import ShanKeyboardShared
 
 class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
+    static let shared = LayoutServiceProvider()
     
     var localeKey: String = KeyboardLocale.shan.id
     
@@ -20,9 +22,48 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
         )
     }
     
-    public lazy var iPadService: KeyboardLayoutService = CustomIPadService(alphabeticInputSet: .panglong, numericInputSet: .panglongNumeric, symbolicInputSet: .panglongSymbolic(currencies: ["$", "฿", "¥"]))
+    var currentLayout: KeyboardInputSetLayout {
+        return SharedUserDefaults.shared.keyboardLayout
+    }
     
-    public lazy var iPhoneService: KeyboardLayoutService = CustomIPhoneService(alphabeticInputSet: .panglong, numericInputSet: .panglongNumeric, symbolicInputSet: .panglongSymbolic(currencies: ["$", "฿", "¥"]))
+    public func getLayout() -> InputSet {
+        switch currentLayout {
+        case .panglong:
+            return .panglong
+        case .shanSIL:
+            return .shanSIL
+        @unknown default:
+            return .panglong
+        }
+    }
+    
+    public func getNumericLayout() -> InputSet {
+        switch currentLayout {
+        case .panglong:
+            return .panglongNumeric
+        case .shanSIL:
+            return .shanSILNumeric
+        @unknown default:
+            return .panglongNumeric
+        }
+    }
+    
+    public func getSymbolicLayout() -> InputSet {
+        let currencies: [String] = ["$", "฿", "¥"]
+        
+        switch currentLayout {
+        case .panglong:
+            return .panglongSymbolic(currencies: currencies)
+        case .shanSIL:
+            return .shanSILSymbolic(currencies: currencies)
+        @unknown default:
+            return .panglongSymbolic(currencies: currencies)
+        }
+    }
+    
+    public lazy var iPadService: KeyboardLayoutService = CustomIPadService(alphabeticInputSet: getLayout(), numericInputSet: getNumericLayout(), symbolicInputSet: getSymbolicLayout())
+    
+    public lazy var iPhoneService: KeyboardLayoutService = CustomIPhoneService(alphabeticInputSet: getLayout(), numericInputSet: getNumericLayout(), symbolicInputSet: getSymbolicLayout())
     
     override func keyboardLayout(for context: KeyboardContext) -> KeyboardLayout {
         let service = keyboardLayoutService(for: context)
