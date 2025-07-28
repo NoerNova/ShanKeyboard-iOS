@@ -7,3 +7,56 @@
 
 import Foundation
 
+public enum KeyboardInputSetLayout: String, CaseIterable {
+    case panglong = "Panglong"
+    case shanSIL = "Shan (SIL)"
+    
+    public var displayName: String {
+        return self.rawValue
+    }
+    
+    public var description: String {
+        switch self {
+        case .panglong:
+            return "Panglong keyboard layout (Old)"
+        case .shanSIL:
+            return "Shan Standard Input Layout (SIL)"
+        }
+    }
+}
+
+// MARK: - Shared Constants
+public struct AppGroupConstants {
+    static let appGroupIdentifier = "group.com.noernova.ShanKeyboard.shared"
+    static let keyboardLayoutKey = "selectedKeyboardLayout"
+}
+
+// MARK: - Shared UserDefaults Manager
+public class SharedUserDefaults {
+    public static let shared = SharedUserDefaults()
+    
+    private let userDefaults: UserDefaults
+    
+    private init() {
+        guard let userDefaults = UserDefaults(suiteName: AppGroupConstants.appGroupIdentifier) else {
+            fatalError("Failed to create UserDefaults with App Group identifier: \(AppGroupConstants.appGroupIdentifier)")
+        }
+        self.userDefaults = userDefaults
+    }
+    
+    public var keyboardLayout: KeyboardInputSetLayout {
+        get {
+            let savedValue = userDefaults.string(forKey: AppGroupConstants.keyboardLayoutKey)
+            
+            if let savedValue = savedValue {
+                return KeyboardInputSetLayout(rawValue: savedValue) ?? .panglong
+            } else {
+                return .panglong
+            }
+        }
+        set {
+            userDefaults.set(newValue.rawValue, forKey: AppGroupConstants.keyboardLayoutKey)
+            userDefaults.synchronize() // Force synchronization
+        }
+    }
+}
