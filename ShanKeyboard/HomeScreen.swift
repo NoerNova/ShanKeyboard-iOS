@@ -16,6 +16,7 @@ struct HomeScreen: View {
     @State private var text: String = ""
     @State private var presentedLicense = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.colorScheme) var colorScheme
     
     @State private var selectedLayout: KeyboardInputSetLayout = SharedUserDefaults.shared.keyboardLayout
     
@@ -32,7 +33,7 @@ struct HomeScreen: View {
                     HStack {
                         Spacer()
                         pageContent
-                            .frame(width: geometry.size.width * 0.8)
+                            .frame(width: min(geometry.size.width * 0.7, 600))
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -44,70 +45,177 @@ struct HomeScreen: View {
 
 extension HomeScreen {
     private var pageContent: some View {
-        List {
-            Section(header: Text("Shan Keyboard")) {
-                VStack {
-                    Text("Current Layout: \(selectedLayout.rawValue)")
-                    VStack {
-                        Text(text)
-                            .foregroundStyle(Color.primary)
-                            .font(.custom("Shan", size: 14))
-                            .foregroundStyle(.gray)
+        ScrollView {
+            LazyVStack(spacing: 24) {
+                // Header Section
+                VStack(spacing: 8) {
+                    Text("Shan Keyboard")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    
+                    Text("Open Source, Privacy Focused, Free to use.")
+                        .font(.system(size: 16, weight: .regular))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 20)
+                
+                // Text Input Demo Section
+                ModernCard {
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Text("Try it out")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text(selectedLayout.rawValue)
+                                .font(.system(size: 14, weight: .medium))
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.accentColor.opacity(0.1))
+                                .foregroundColor(.accentColor)
+                                .clipShape(Capsule())
+                        }
+                        
+                        if !text.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Output:")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.secondary)
+                                    .textCase(.uppercase)
+                                    .tracking(0.5)
+                                
+                                Text(text)
+                                    .font(.custom("Shan", size: 18))
+                                    .foregroundColor(.primary)
+                                    .padding(12)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(colorScheme == .dark ? Color.gray.opacity(0.1) : Color.gray.opacity(0.05))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                        }
+                        
+                        TextField("Type something...", text: $text)
+                            .font(.system(size: 16))
+                            .padding(16)
+                            .background(colorScheme == .dark ? Color.gray.opacity(0.1) : Color.gray.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(text.isEmpty ? Color.clear : Color.accentColor.opacity(0.3), lineWidth: 1)
+                            )
                     }
-                    TextField("Type something...", text: $text)
-                        .frame(height: 48)
-                        .padding(EdgeInsets(top: 0, leading: 6, bottom: 0, trailing: 6))
-                        .cornerRadius(5)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 5)
-                                .stroke(lineWidth: 1.0)
-                        )
-                }
-            }
-            
-            Section(header: Text("SETUP")) {
-                NavigationLink(destination: AddKeyboardScreen()) {
-                    SettingButton(useSystemImage: true, buttonImage: "keyboard", buttonTitle: "Add Keyboard", isNavigationButton: true)
-                }
-                NavigationLink(destination: KeyboardLayoutPreferencesView()) {
-                    SettingButton(useSystemImage: true, buttonImage: "keyboard", buttonTitle: "Keyboard Layout Preferences", isNavigationButton: true)
-                }
-            }
-            
-            Section(header: Text("SOURCE")) {
-                Button {
-                    UIApplication.shared.open(URL(string: "https://github.com/NoerNova/ShanKeyboard-iOS")!)
-                } label: {
-                    SettingButton(useSystemImage: false, buttonImage: "GitHub", buttonTitle: "Source Code", isNavigationButton: true)
                 }
                 
-                Button {
-                    self.presentedLicense.toggle()
-                } label: {
-                    SettingButton(useSystemImage: false, buttonImage: "MIT", buttonTitle: "License", isNavigationButton: true)
+                // Setup Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Setup")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 20)
+                    
+                    VStack(spacing: 8) {
+                        NavigationLink(destination: AddKeyboardScreen()) {
+                            SettingRow(
+                                icon: "keyboard",
+                                title: "Add Keyboard",
+                                subtitle: "Enable the Shan keyboard in settings"
+                            )
+                        }
+                        
+                        NavigationLink(destination: KeyboardLayoutPreferencesView()) {
+                            SettingRow(
+                                icon: "textformat.abc",
+                                title: "Layout Preferences",
+                                subtitle: "Select preferred keyboard layout"
+                            )
+                        }
+                    }
                 }
+                
+                // Source Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Open Source")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 20)
+                    
+                    VStack(spacing: 8) {
+                        Button {
+                            UIApplication.shared.open(URL(string: "https://github.com/NoerNova/ShanKeyboard-iOS")!)
+                        } label: {
+                            SettingRow(
+                                icon: "chevron.left.forwardslash.chevron.right",
+                                title: "Source Code",
+                                subtitle: "View on GitHub"
+                            )
+                        }
+                        
+                        Button {
+                            self.presentedLicense.toggle()
+                        } label: {
+                            SettingRow(
+                                icon: "doc.text",
+                                title: "License",
+                                subtitle: "MIT License"
+                            )
+                        }
+                    }
+                }
+                
+                // About Section
+                ModernCard {
+                    VStack(spacing: 16) {
+                        NavigationLink(destination: AboutScreen()) {
+                            HStack(spacing: 16) {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(.accentColor)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("About")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.primary)
+                                    Text("Learn more about this app")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Divider()
+                            .opacity(0.5)
+                        
+                        HStack {
+                            Text("Version")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Text("1.0")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.primary)
+                        }
+                    }
+                }
+                
+                // Footer
+                VStack(spacing: 8) {
+                    Text("Copyright © 2025 NoerNova")
+                        .font(.system(size: 12, weight: .regular))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.bottom, 40)
             }
-            
-            Section(header: Text("About")) {
-                NavigationLink(destination: AboutScreen()) {
-                    SettingButton(useSystemImage: true, buttonImage: "info.circle.fill", buttonTitle: "About", isNavigationButton: true)
-                }
-                HStack {
-                    Text("Version")
-                        .foregroundColor(.gray)
-                    Spacer()
-                    Text("0.5")
-                        .foregroundColor(.gray)
-                }
-                .frame(height: 60)
-            }
-            
-            Text("Copyright © 2025 NoerNova")
-                .frame(maxWidth: .infinity, alignment: .center)
-                .foregroundColor(.gray)
+            .padding(.horizontal, 20)
         }
-        .listStyle(GroupedListStyle())
-        .navigationTitle("Shan Keyboard")
+        .background(colorScheme == .dark ? Color.black : Color(UIColor.systemGroupedBackground))
+        .navigationBarHidden(true)
         .sheet(isPresented: $presentedLicense) {
             LicenseScreen()
         }
@@ -117,8 +225,59 @@ extension HomeScreen {
     }
 }
 
-struct SettingButton: View {
+struct ModernCard<Content: View>: View {
+    let content: Content
+    @Environment(\.colorScheme) var colorScheme
     
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .padding(20)
+            .background(colorScheme == .dark ? Color.gray.opacity(0.1) : Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .shadow(color: colorScheme == .dark ? Color.clear : Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+    }
+}
+
+struct SettingRow: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.accentColor)
+                .frame(width: 24, height: 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.primary)
+                Text(subtitle)
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.secondary)
+        }
+        .padding(16)
+        .background(colorScheme == .dark ? Color.gray.opacity(0.1) : Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: colorScheme == .dark ? Color.clear : Color.black.opacity(0.05), radius: 4, x: 0, y: 1)
+    }
+}
+
+struct SettingButton: View {
     var useSystemImage: Bool
     var buttonImage: String
     var buttonTitle: String
@@ -127,7 +286,6 @@ struct SettingButton: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        
         HStack {
             useSystemImage ?
             Image(systemName: buttonImage)
@@ -144,7 +302,6 @@ struct SettingButton: View {
             Text(buttonTitle)
                 .foregroundColor(colorScheme == .dark ? Color.white : Color.black)
         }
-        
     }
 }
 
