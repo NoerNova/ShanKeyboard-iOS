@@ -12,8 +12,8 @@ struct AddKeyboardScreen: View {
     @State private var promptToOpenSetting = false
     
     var body: some View {
-            VStack {
-                Image("setupShanKeyboard")
+        VStack {
+                Image("KeyboardSettings")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .padding()
@@ -37,6 +37,7 @@ struct AddKeyboardScreen: View {
                             secondaryButton: .cancel()
                            )
                        }
+            Spacer()
             }
             .navigationBarTitle("Setup keyboard")
     }
