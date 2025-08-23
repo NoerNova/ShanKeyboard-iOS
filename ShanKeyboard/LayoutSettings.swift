@@ -69,9 +69,10 @@ struct KeyboardLayoutPreferencesView: View {
                     .cornerRadius(8)
                     .padding(.horizontal)
                 }
-                .navigationTitle("Keyboard Settings")
-                .navigationBarTitleDisplayMode(.inline)
             }
+            .navigationTitle("Keyboard Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationViewStyle(StackNavigationViewStyle())
             .onAppear {
                 // Refresh from shared defaults when view appears
                 selectedLayout = SharedUserDefaults.shared.keyboardLayout
