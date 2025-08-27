@@ -116,7 +116,7 @@ struct HomeScreen: View {
             VStack(spacing: 16) {
                 // Layout selector
                 HStack {
-                    Text("Layout:")
+                    Text("Current Layout:")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.secondary)
                     
@@ -165,6 +165,9 @@ struct HomeScreen: View {
                     }
                 }
             }
+        }
+        .onAppear {
+            selectedLayout = SharedUserDefaults.shared.keyboardLayout
         }
     }
     
