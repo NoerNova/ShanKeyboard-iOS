@@ -31,7 +31,7 @@ public extension InputSet {
             .init(
                 phone: "_\\|~<>\(currencies.joined())•",
                 pad: "\(currencies.joined())_^[]{}"),
-            .init(phone: ".,?!’", pad: "§|~…\\<>!?")
+            .init(phone: "x÷.,?!’", pad: "§|~…\\<>!?")
         ])
     }
     
@@ -40,7 +40,7 @@ public extension InputSet {
         .init(rows: [
             .init(lowercased: ["ၸ", "တ", "ၼ", "မ", "ဢ", "ပ", "ၵ", "င", "ဝ", "ႁ"], uppercased: ["ꩡ", "ၻ", "ꧣ", "႞", "ြ", "ၿ", "ၷ", "ရ", "သ", "ႀ"]),
             .init(lowercased: ["ေ", "ႄ", "ိ", "်", "ွ", "ႉ", "ႇ", "ု", "ူ", "ႈ"], uppercased: ["ဵ", "ႅ", "ီ", "ႂ်", "ႂ", "့", "ႆ", "\"", "ႊ", "း"]),
-            .init(lowercased: ["ၽ", "ထ", "ၶ", "လ", "ယ", "ၺ", "ၢ", "။"], uppercased: ["ၾ", "ꩪ", "ꧠ", "ꩮ", "ျ", "႟", "ႃ", "ꧦ"])
+            .init(phoneLowercased: ["ၽ", "ထ", "ၶ", "လ", "ယ", "ၺ", "ၢ", "။"], phoneUppercased: ["ၾ", "ꩪ", "ꧠ", "ꩮ", "ျ", "႟", "ႃ", "၊"], padLowercased: ["ၽ", "ထ", "ၶ", "လ", "ယ", "ၺ", "ၢ", ","], padUppercased: ["ၾ", "ꩪ", "ꧠ", "ꩮ", "ျ", "႟", "ႃ", "?"])
         ])
     }
     
@@ -58,7 +58,7 @@ public extension InputSet {
             .init(
                 phone: "_\\|~<>\(currencies.joined())•",
                 pad: "\(currencies.joined())_^[]{}"),
-            .init(phone: ".,?!’", pad: "§|~…\\<>!?")
+            .init(phone: "x÷.,?!’", pad: "§|~…\\<>!?")
         ])
     }
 }
