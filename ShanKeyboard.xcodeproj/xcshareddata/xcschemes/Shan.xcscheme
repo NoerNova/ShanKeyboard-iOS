@@ -60,7 +60,7 @@
       <RemoteRunnable
          runnableDebuggingMode = "1"
          BundleIdentifier = "com.noernova.ShanKeyboard"
-         RemotePath = "/Users/noernova/Library/Developer/CoreSimulator/Devices/F4261FFD-251D-4404-877C-6A46456891E0/data/Containers/Bundle/Application/B6AEBB81-E080-4928-9E4F-BDEDD0EED24D/ShanKeyboard.app">
+         RemotePath = "/Users/noernova/Library/Developer/CoreSimulator/Devices/90BA135F-39C6-4B1F-A631-BEAB1177D1B5/data/Containers/Bundle/Application/F869384D-6925-4B40-A9D4-A80E6225BFC3/ShanKeyboard.app">
       </RemoteRunnable>
       <MacroExpansion>
          <BuildableReference

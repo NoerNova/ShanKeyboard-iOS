@@ -8,7 +8,7 @@
 import KeyboardKit
 import SwiftUI
 
-class StyleProvider: KeyboardStyle.StandardProvider {
+class StyleProvider: KeyboardStyle.StandardStyleService {
     
     let isIPad = UIDevice.current.userInterfaceIdiom == .pad
     

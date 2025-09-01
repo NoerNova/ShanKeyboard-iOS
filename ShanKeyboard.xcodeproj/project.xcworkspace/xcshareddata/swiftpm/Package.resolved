@@ -1,5 +1,5 @@
 {
-  "originHash" : "b42c7eef6347fe73795d7562d2ff713284f7f1a45a53b9d8ce0b1a6a115ee478",
+  "originHash" : "0d9198a8abf79e09df0969ce3ea717b05923446f9e3ed339d1782ed7eaeff81f",
   "pins" : [
     {
       "identity" : "isemojiview",
@@ -7,7 +7,7 @@
       "location" : "https://github.com/NoerNova/ISEmojiView.git",
       "state" : {
         "branch" : "custom",
-        "revision" : "816c2089a076caf68ad7b502fb41bf632bb93763"
+        "revision" : "84f47534219346531441ecef53fac9df29537a81"
       }
     },
     {
@@ -16,7 +16,7 @@
       "location" : "https://github.com/NoerNova/KeyboardKit.git",
       "state" : {
         "branch" : "custom",
-        "revision" : "26a3f5c3238d1219632b2971f2b170a8c89efec2"
+        "revision" : "96c7803c10129c3ee7e7719f901aa1a9eb99dabf"
       }
     }
   ],

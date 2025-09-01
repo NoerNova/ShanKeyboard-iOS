@@ -10,6 +10,7 @@ import KeyboardKit
 
 class AutocompleteServiceProvider: AutocompleteService {
     
+    
     // MARK: - Dependencies
     private let wordCompletion: WordCompletionService
     private let characterPrediction: CharacterPredictionService
@@ -20,7 +21,7 @@ class AutocompleteServiceProvider: AutocompleteService {
     
     // MARK: - Properties
     private var context: AutocompleteContext
-    private let suggestionCache = NSCache<NSString, NSArray>()
+    private var suggestionCache: [String: Autocomplete.ServiceResult] = [:]
     
     var locale: Locale = .current
     var canIgnoreWords: Bool { true }
@@ -69,33 +70,45 @@ class AutocompleteServiceProvider: AutocompleteService {
         dataManager.unlearnWord(word)
     }
     
-    func autocompleteSuggestions(
-        for text: String
-    ) async throws -> [Autocomplete.Suggestion] {
-        guard !text.isEmpty else { return [] }
-        
-        // Check cache first
-        let cacheKey = text as NSString
-        if let cachedSuggestions = suggestionCache.object(forKey: cacheKey) as? [Autocomplete.Suggestion] {
-            return cachedSuggestions
+    func autocomplete(_ text: String) async throws -> Autocomplete.ServiceResult {
+        guard !text.isEmpty else {
+            return Autocomplete.ServiceResult(
+                inputText: text,
+                suggestions: [],
+                emojiSuggestions: [],
+                nextCharacterPredictions: [:],
+            )
         }
         
+        // Check cache first
+        if let cachedResult = suggestionCache[text] {
+            return cachedResult
+        }
+        
+        // Get suggestions
         let suggestions = getSuggestions(for: text)
-        suggestionCache.setObject(suggestions as NSArray, forKey: cacheKey)
-        return suggestions
-    }
-
-    func nextCharacterPredictions(
-        forText text: String,
-        suggestions: [Autocomplete.Suggestion]
-    ) async throws -> [Character : Double] {
-        return characterPrediction.getNextCharacterPredictions(for: text)
+        
+        // Get character predictions
+        let characterPredictions = characterPrediction.getNextCharacterPredictions(for: text)
+        
+        // Create result
+        let result = Autocomplete.ServiceResult(
+            inputText: text,
+            suggestions: suggestions,
+            emojiSuggestions: [],
+            nextCharacterPredictions: characterPredictions,
+        )
+        
+        // Cache the result
+        suggestionCache[text] = result
+        
+        return result
     }
     
     // MARK: - Main Suggestion Logic
     private func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
         var suggestions: [Autocomplete.Suggestion] = []
-        let maxSuggestions = max(3, context.suggestionsDisplayCount)
+        let maxSuggestions = max(3, context.settings.suggestionsDisplayCount)
         
         // 1. Word completion from learned words (highest priority)
         suggestions.append(contentsOf: wordCompletion.getSuggestions(for: text))

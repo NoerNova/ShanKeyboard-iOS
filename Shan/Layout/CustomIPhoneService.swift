@@ -7,7 +7,7 @@
 
 import KeyboardKit
 
-class CustomIPhoneService: KeyboardLayout.iPhoneService {
+class CustomIPhoneService: KeyboardLayout.iPhoneLayoutService {
     
     /// Remove unnecessary bottomAction for Shan language
     override func bottomActions(
@@ -103,7 +103,7 @@ private extension CustomIPhoneService {
     }
     
     func shouldUpdateUpperCharacterInputWidth(_ row: Int, for context: KeyboardContext) -> Bool {
-        let isCharacter = context.keyboardType.isAlphabetic
+        let isCharacter = context.keyboardType.isNumericOrSymbolic == false
 //        let isUpperRow = row == 0 || row == 1 || row == 2 || row == 3
         let isURL = context.textDocumentProxy.keyboardType == .URL
         guard isCharacter && !isURL else { return false }

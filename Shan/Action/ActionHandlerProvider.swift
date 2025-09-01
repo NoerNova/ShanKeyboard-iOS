@@ -8,7 +8,7 @@
 import KeyboardKit
 import UIKit
 
-class ActionHandlerProvider: KeyboardAction.StandardHandler {
+class ActionHandlerProvider: KeyboardAction.StandardActionHandler {
     
     override func handle(
         _ suggestion: Autocomplete.Suggestion

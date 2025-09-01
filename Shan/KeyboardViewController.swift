@@ -18,14 +18,15 @@ class KeyboardViewController: ShanKeyboardInputViewController {
         super.viewDidLoad()
     }
     
-    override func viewWillSetupKeyboard() {
-        super.viewWillSetupKeyboard()
+    override func viewWillSetupKeyboardView() {
+        super.viewWillSetupKeyboardView()
         
-        setup { controller in KeyboardView(
+        setupKeyboardView { controller in KeyboardView(
             state: controller.state,
             services: controller.services,
             buttonContent: { $0.view },
             buttonView: { $0.view },
+            collapsedView: { $0.view },
             emojiKeyboard: { $0.view },
             toolbar: { params in params.view }
         )}
@@ -39,17 +40,17 @@ extension KeyboardViewController {
         services.autocompleteService = AutocompleteServiceProvider(context: state.autocompleteContext)
         
         services.layoutService = LayoutServiceProvider()
-        services.styleProvider = StyleProvider(keyboardContext: state.keyboardContext)
+        services.styleService = StyleProvider(keyboardContext: state.keyboardContext)
         services.calloutService = CalloutProvider()
         services.keyboardBehavior = BehaviorProvider(keyboardContext: state.keyboardContext)
         services.actionHandler = ActionHandlerProvider(controller: self)
     }
     
     func setupState() {
-        state.keyboardContext.spaceLongPressBehavior = .moveInputCursor
-        
         state.keyboardContext.localePresentationLocale = .current
-        state.keyboardContext.locale = KeyboardLocale.shan.locale
-        state.keyboardContext.isAutocapitalizationEnabled = false
+        
+        state.keyboardContext.settings.spaceLongPressBehavior = .moveInputCursor
+        state.keyboardContext.settings.isAutocapitalizationEnabled = false
+        state.keyboardContext.settings.locale = KeyboardLocale.shan.locale
     }
 }

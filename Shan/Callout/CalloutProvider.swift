@@ -7,7 +7,7 @@
 
 import KeyboardKit
 
-class CalloutProvider: Callouts.BaseService {
+class CalloutProvider: Callouts.BaseCalloutService {
     
     override func calloutActions(for action: KeyboardAction) -> [KeyboardAction] {
         switch action {

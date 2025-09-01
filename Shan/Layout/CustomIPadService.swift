@@ -7,7 +7,7 @@
 
 import KeyboardKit
 
-class CustomIPadService: KeyboardLayout.iPadService {
+class CustomIPadService: KeyboardLayout.iPadLayoutService {
     
     /// The bottom row actions.
     override func bottomActions(for context: KeyboardContext) -> KeyboardAction.Row {

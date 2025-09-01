@@ -8,9 +8,9 @@
 import KeyboardKit
 import UIKit
 
-class BehaviorProvider: Keyboard.StandardBehavior {
+class BehaviorProvider: Keyboard.StandardKeyboardBehavior {
     
-    override init(keyboardContext: KeyboardContext, doubleTapThreshold: TimeInterval = 0.5, endSentenceText: String = "။ ", endSentenceThreshold: TimeInterval = 3.0, repeatGestureTimer: GestureButtonTimer = .init()) {
+    override init(keyboardContext: KeyboardContext, doubleTapThreshold: TimeInterval? = 0.5, endSentenceText: String? = "။ ", endSentenceThreshold: TimeInterval? = 3.0, repeatGestureTimer: GestureButtonTimer? = .init()) {
         super.init(
             keyboardContext: keyboardContext,
             doubleTapThreshold: doubleTapThreshold,
@@ -20,7 +20,14 @@ class BehaviorProvider: Keyboard.StandardBehavior {
         )
     }
     
-    override func shouldSwitchToCapsLock(after gesture: Keyboard.Gesture, on action: KeyboardAction) -> Bool {
-        return false
+    override func preferredKeyboardCase(after gesture: Keyboard.Gesture, on action: KeyboardAction) -> Keyboard.KeyboardCase {
+        let current = keyboardContext.keyboardCase
+        switch action {
+        case .shift:
+            guard gesture == .release else { return current }
+            return isDoubleShiftTap ? .auto : current
+        default:
+            return .auto
+        }
     }
 }

@@ -9,7 +9,7 @@ import KeyboardKit
 import SwiftUI
 import ShanKeyboardShared
 
-class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
+class LayoutServiceProvider: KeyboardLayout.BaseLayoutService, LocalizedService {
     static let shared = LayoutServiceProvider()
     
     var localeKey: String = KeyboardLocale.shan.id
@@ -26,7 +26,7 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
         return SharedUserDefaults.shared.keyboardLayout
     }
     
-    public func getLayout() -> InputSet {
+    public func getLayout() -> KeyboardLayout.InputSet {
         switch currentLayout {
         case .panglong:
             return .panglong
@@ -37,7 +37,7 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
         }
     }
     
-    public func getNumericLayout() -> InputSet {
+    public func getNumericLayout() -> KeyboardLayout.InputSet {
         switch currentLayout {
         case .panglong:
             return .panglongNumeric
@@ -48,7 +48,7 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
         }
     }
     
-    public func getSymbolicLayout() -> InputSet {
+    public func getSymbolicLayout() -> KeyboardLayout.InputSet {
         let currencies: [String] = ["$", "฿", "¥"]
         
         switch currentLayout {
@@ -67,7 +67,7 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
     
     override func keyboardLayout(for context: KeyboardContext) -> KeyboardLayout {
         let service = keyboardLayoutService(for: context)
-        let layout = service.keyboardLayout(for: context)
+        var layout = service.keyboardLayout(for: context)
         
         if UIDevice.current.userInterfaceIdiom == .pad {
             layout.tryInsertPunctuations(.character("။"))
@@ -89,8 +89,8 @@ class LayoutServiceProvider: KeyboardLayout.BaseService, LocalizedService {
 }
 
 private extension KeyboardLayout {
-    func tryInsertPunctuations(_ action: KeyboardAction) {
+    mutating func tryInsertPunctuations(_ action: KeyboardAction) {
         guard let item = tryCreateBottomRowItem(for: action) else { return }
-        itemRows.insert(item, after: .space, atRow: bottomRowIndex)
+        itemRows.insert(item, after: .space, inRow: bottomRowIndex)
     }
 }
