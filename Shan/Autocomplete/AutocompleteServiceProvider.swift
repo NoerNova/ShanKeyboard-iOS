@@ -123,62 +123,68 @@ class AutocompleteServiceProvider: AutocompleteService {
             suggestions.append(contentsOf: dictionaryService.getSyllableSuggestions(for: text))
         }
 
-//        // 4. Character-level predictions
-//        // TODO: Should analyze Shan's gramma for next character suggestion
-//        if suggestions.count < maxSuggestions {
-//            suggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
-//        }
-        
-        // 5. Dictionary word suggestions
+        // 4. Dictionary word suggestions (prefer words over raw characters)
         if suggestions.count < maxSuggestions {
             suggestions.append(contentsOf: dictionaryService.getDictionarySuggestions(for: text))
+        }
+
+        // 5. Character-level predictions (fallback only)
+        // Character predictions can be noisy for Shan; keep as last resort.
+        if suggestions.count < maxSuggestions {
+            suggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
         }
 
         
         // Remove duplicates and limit results
         let uniqueSuggestions = removeDuplicatesAndInputText(from: suggestions, inputText: text)
-//        return Array(uniqueSuggestions.prefix(maxSuggestions))
-        return suggestions
+        return Array(uniqueSuggestions.prefix(maxSuggestions))
     }
     
     private func removeDuplicatesAndInputText(from suggestions: [Autocomplete.Suggestion], inputText: String) -> [Autocomplete.Suggestion] {
         var seen = Set<String>()
         var processedSuggestions: [Autocomplete.Suggestion] = []
         
+        let inputIsValid = !inputText.isEmpty && dictionaryService.isValidWord(inputText) && inputText.count > 2
+
         for suggestion in suggestions {
-            if suggestion.text == inputText {
-                continue
-            }
+            guard suggestion.text != inputText else { continue }
             
-            var completionText = suggestion.text
+            let completionText = determineCompletionText(for: suggestion, inputText: inputText, inputIsValid: inputIsValid)
             
-            if suggestion.text.hasPrefix(inputText) && suggestion.text.count > inputText.count {
-                let dropInputText = String(suggestion.text.dropFirst(inputText.count))
-                if dropInputText.count < 3 {
-                    continue
-                }
-                completionText = String(suggestion.text.dropFirst(inputText.count))
-            } else if !suggestion.text.hasPrefix(inputText) {
-                continue
-            }
+            guard let completion = completionText, !completion.isEmpty, !seen.contains(completion) else { continue }
             
-            // Skip if we've already seen this completion
-            if seen.contains(completionText) {
-                continue
-            }
-            
-            seen.insert(completionText)
-            
-            // Create new suggestion with completion text
-            let completionSuggestion = Autocomplete.Suggestion(
-                text: completionText,
-                type: suggestion.type,
-                source: suggestion.source
+            seen.insert(completion)
+            processedSuggestions.append(
+                Autocomplete.Suggestion(
+                    text: completion,
+                    type: suggestion.type,
+                    source: suggestion.source
+                )
             )
-            processedSuggestions.append(completionSuggestion)
+        }
+
+        return processedSuggestions
+    }
+
+    private func determineCompletionText(for suggestion: Autocomplete.Suggestion, inputText: String, inputIsValid: Bool) -> String? {
+        guard inputIsValid else {
+            return suggestion.text
         }
         
-        return processedSuggestions
+        if dictionaryService.isValidWord(suggestion.text) {
+            return processValidSuggestion(suggestion.text, inputText: inputText)
+        }
+        
+        return suggestion.text
+    }
+
+    private func processValidSuggestion(_ suggestionText: String, inputText: String) -> String {
+        guard suggestionText.hasPrefix(inputText), suggestionText.count > inputText.count else {
+            return suggestionText
+        }
+        
+        let dropped = String(suggestionText.dropFirst(inputText.count))
+        return (dictionaryService.isValidWord(dropped) && dropped.count >= 1) ? dropped : suggestionText
     }
 }
 
