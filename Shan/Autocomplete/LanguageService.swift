@@ -8,6 +8,8 @@
 import Foundation
 
 class ShanLanguageService {
+    // Reuse dictionary service to avoid reloading resources repeatedly
+    static let sharedDictionary = DictionaryService()
     
     // MARK: - Shan Language Character Sets
     let shanVowels: Set<String> = ["ႃ", "ၢ", "ႄ", "ႅ", "ေ", "ဵ", "ိ", "ီ", "ု", "ူ", "ႆ", "ႂ", "်", "ွ", "ျ", "ြ"]
@@ -62,23 +64,43 @@ class ShanLanguageService {
     }
     
     // MARK: - Word Parsing
-    // TODO: Shan language do not have such a word boundary characters
-    // TODO: Should use tokenize instead
+    // In Shan, there is no explicit word separator. Use the tokenizer and dictionary
+    // to infer completeness of the last token.
     func getLastCompleteWord(from text: String) -> String? {
-//        let components = text.components(separatedBy: wordBoundaryCharacters)
-        let components = Tokenizer.shared.tokenize(text)
-        let filtered = components.filter { !$0.isEmpty }
-        return filtered.count >= 2 ? filtered[filtered.count - 2] : nil
-    }
-    
-    func getCurrentIncompleteWord(from text: String) -> String {
-        // Prefer tokenizer: take the last token or partial sequence near the end
-        if let last = Tokenizer.shared.getLastToken(from: text) {
-            return last
+        let tokens = Tokenizer.shared.tokenize(text)
+        guard !tokens.isEmpty else { return nil }
+
+        // If the last token is a valid dictionary word, treat it as complete.
+        if let last = tokens.last, ShanLanguageService.sharedDictionary.isValidWord(last) { return last }
+
+        // Otherwise, try the previous token (user is likely typing the next one).
+        if tokens.count >= 2 {
+            let prev = tokens[tokens.count - 2]
+            return ShanLanguageService.sharedDictionary.isValidWord(prev) ? prev : nil
         }
-        // Fallback to simple boundary split
+        return nil
+    }
+
+    func getCurrentIncompleteWord(from text: String) -> String {
+        // If the last token is not a full dictionary word, return it as the incomplete prefix
+        if let last = Tokenizer.shared.getLastToken(from: text) {
+            return ShanLanguageService.sharedDictionary.isValidWord(last) ? "" : last
+        }
+        // Fallback to simple boundary split (rarely used)
         let components = text.components(separatedBy: wordBoundaryCharacters)
         return components.last?.trimmingCharacters(in: .whitespaces) ?? ""
+    }
+
+    // Helpers
+    func lastValidToken(in text: String) -> String? {
+        let tokens = Tokenizer.shared.tokenize(text)
+        return tokens.reversed().first { ShanLanguageService.sharedDictionary.isValidWord($0) }
+    }
+
+    func lastInvalidToken(in text: String) -> String? {
+        let tokens = Tokenizer.shared.tokenize(text)
+        guard let last = tokens.last else { return nil }
+        return ShanLanguageService.sharedDictionary.isValidWord(last) ? nil : last
     }
     
     func parseWords(from text: String) -> [String] {
