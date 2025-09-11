@@ -32,23 +32,25 @@ class ContextualSuggestionService {
     }
     
     private func getContextualSuggestions(for text: String) -> [Autocomplete.Suggestion] {
-        var suggestions: [Autocomplete.Suggestion] = []
-        
-        // Use bigram model for word-level prediction
-        if let lastWord = shanService.getLastCompleteWord(from: text) {
-            if let nextWords = dataManager.bigramChain[lastWord] {
-                let sortedWords = nextWords.sorted { $0.value > $1.value }
-                let currentIncomplete = shanService.getCurrentIncompleteWord(from: text)
-                
-                for (word, _) in sortedWords.prefix(5) {
-                    if word.hasPrefix(currentIncomplete) {
-                        suggestions.append(Autocomplete.Suggestion(text: word, type: .regular))
-                    }
-                }
-            }
+        var results: [Autocomplete.Suggestion] = []
+
+        // Determine context: last complete token for bigram lookup.
+        guard let contextToken = shanService.getLastCompleteWord(from: text),
+              let candidates = dataManager.bigramChain[contextToken] else {
+            return results
         }
-        
-        return suggestions
+
+        // If the user already started the next token, filter by that prefix.
+        let partialNext = shanService.getCurrentIncompleteWord(from: text)
+
+        let sorted = candidates.sorted { $0.value > $1.value }
+        for (next, _) in sorted.prefix(10) {
+            if !partialNext.isEmpty && !next.hasPrefix(partialNext) { continue }
+            results.append(Autocomplete.Suggestion(text: next, type: .regular))
+            if results.count >= 5 { break }
+        }
+
+        return results
     }
     
     private func getFallbackSuggestions(for text: String, excluding: Set<String>) -> [Autocomplete.Suggestion] {
