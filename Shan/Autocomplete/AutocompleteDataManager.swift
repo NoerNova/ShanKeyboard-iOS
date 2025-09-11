@@ -179,9 +179,9 @@ class AutocompleteDataManager {
     }
     
     private func parseWordsFromText(_ text: String) -> [String] {
-        return text.components(separatedBy: CharacterSet(charactersIn: " ။၊\n\t"))
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        // Use the Shan tokenizer to split text into words, since Shan has no spaces
+        let tokens = Tokenizer.shared.tokenize(text)
+        return tokens.filter { !$0.isEmpty }
     }
     
     // MARK: - Markov Chain Building

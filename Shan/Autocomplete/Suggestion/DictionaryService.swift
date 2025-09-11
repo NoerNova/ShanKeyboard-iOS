@@ -20,14 +20,17 @@ class DictionaryService {
     }
     
     func getDictionarySuggestions(for prefix: String, limit: Int = 5) -> [Autocomplete.Suggestion] {
-        let matches = searchWords(prefix: prefix, limit: limit)
+        // Use tokenizer to derive the active input token as the prefix
+        let activePrefix = Tokenizer.shared.getLastToken(from: prefix) ?? prefix
+        let matches = searchWords(prefix: activePrefix, limit: limit)
         return matches.map { match in
             Autocomplete.Suggestion(text: match.word, type: .regular)
         }
     }
     
     func getSyllableSuggestions(for prefix: String, limit: Int = 5) -> [Autocomplete.Suggestion] {
-        let matches = searchSyllables(prefix: prefix, limit: limit)
+        let activePrefix = Tokenizer.shared.getLastToken(from: prefix) ?? prefix
+        let matches = searchSyllables(prefix: activePrefix, limit: limit)
         return matches.map { match in
             Autocomplete.Suggestion(text: match.word, type: .regular)
         }
@@ -78,6 +81,23 @@ class DictionaryService {
         return prefixNode.getAllWords(limit: limit).map {
             DictionaryMatch(word: $0.word, frequency: $0.frequency, type: .syllable)
         }
+    }
+    
+    func isValidWord(_ text: String) -> Bool {
+        guard !text.isEmpty else {
+            return false
+        }
+        
+        if trie.contains(text) {
+            return true
+        }
+        
+        if syllableTrie.contains(text) {
+            return true
+        }
+        
+        return false
+        
     }
 }
 

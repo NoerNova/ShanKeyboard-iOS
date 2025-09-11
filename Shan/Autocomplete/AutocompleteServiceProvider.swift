@@ -113,41 +113,72 @@ class AutocompleteServiceProvider: AutocompleteService {
         // 1. Word completion from learned words (highest priority)
         suggestions.append(contentsOf: wordCompletion.getSuggestions(for: text))
         
-        // 2. Syllable-level predictions
-        if suggestions.count < maxSuggestions {
-            suggestions.append(contentsOf: dictionaryService.getSyllableSuggestions(for: text))
-        }
-        
-        // 3. Character-level predictions
-        // TODO: Should analyze Shan's gramma for next character suggestion
-        if suggestions.count < maxSuggestions {
-            suggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
-        }
-        
-        // 4. Dictionary word suggestions
-        if suggestions.count < maxSuggestions {
-            suggestions.append(contentsOf: dictionaryService.getDictionarySuggestions(for: text))
-        }
-        
-//        // 5. Contextual suggestions
+//        // 2. Contextual next-word suggestions (bigram-based)
 //        if suggestions.count < maxSuggestions {
 //            suggestions.append(contentsOf: contextualService.getSuggestions(for: text))
 //        }
+
+        // 3. Syllable-level predictions
+        if suggestions.count < maxSuggestions {
+            suggestions.append(contentsOf: dictionaryService.getSyllableSuggestions(for: text))
+        }
+
+//        // 4. Character-level predictions
+//        // TODO: Should analyze Shan's gramma for next character suggestion
+//        if suggestions.count < maxSuggestions {
+//            suggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
+//        }
+        
+        // 5. Dictionary word suggestions
+        if suggestions.count < maxSuggestions {
+            suggestions.append(contentsOf: dictionaryService.getDictionarySuggestions(for: text))
+        }
+
         
         // Remove duplicates and limit results
-        let uniqueSuggestions = removeDuplicates(from: suggestions)
-        return Array(uniqueSuggestions.prefix(maxSuggestions))
+        let uniqueSuggestions = removeDuplicatesAndInputText(from: suggestions, inputText: text)
+//        return Array(uniqueSuggestions.prefix(maxSuggestions))
+        return suggestions
     }
     
-    private func removeDuplicates(from suggestions: [Autocomplete.Suggestion]) -> [Autocomplete.Suggestion] {
+    private func removeDuplicatesAndInputText(from suggestions: [Autocomplete.Suggestion], inputText: String) -> [Autocomplete.Suggestion] {
         var seen = Set<String>()
-        return suggestions.filter { suggestion in
-            if seen.contains(suggestion.text) {
-                return false
+        var processedSuggestions: [Autocomplete.Suggestion] = []
+        
+        for suggestion in suggestions {
+            if suggestion.text == inputText {
+                continue
             }
-            seen.insert(suggestion.text)
-            return true
+            
+            var completionText = suggestion.text
+            
+            if suggestion.text.hasPrefix(inputText) && suggestion.text.count > inputText.count {
+                let dropInputText = String(suggestion.text.dropFirst(inputText.count))
+                if dropInputText.count < 3 {
+                    continue
+                }
+                completionText = String(suggestion.text.dropFirst(inputText.count))
+            } else if !suggestion.text.hasPrefix(inputText) {
+                continue
+            }
+            
+            // Skip if we've already seen this completion
+            if seen.contains(completionText) {
+                continue
+            }
+            
+            seen.insert(completionText)
+            
+            // Create new suggestion with completion text
+            let completionSuggestion = Autocomplete.Suggestion(
+                text: completionText,
+                type: suggestion.type,
+                source: suggestion.source
+            )
+            processedSuggestions.append(completionSuggestion)
         }
+        
+        return processedSuggestions
     }
 }
 

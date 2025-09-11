@@ -41,29 +41,43 @@ class TrieNode {
         return current
     }
     
-    func getAllWords(limit: Int = 10) -> [(word: String, frequency: Int)] {
-        var results: [(String, Int)] = []
-        
-        func dfs(_ node: TrieNode) {
-            if results.count >= limit { return }
-            
-            if node.isEndOfWord, let word = node.word {
-                results.append((word, node.frequency))
+    func contains(_ word: String) -> Bool {
+        var current = self
+        for char in word {
+            guard let child = current.children[String(char)] else {
+                return false
             }
-            
-            // Sort children by frequency for better suggestions
+            current = child
+        }
+        return current.isEndOfWord
+    }
+    
+    func getAllWords(limit: Int = 10) -> [(word: String, frequency: Int)] {
+        // Collect all words in the subtree, then return the top-N by frequency.
+        // This ensures we don't prematurely stop and miss higher-frequency words
+        // located deeper in the trie.
+        var collected: [(String, Int)] = []
+
+        func dfs(_ node: TrieNode) {
+            if node.isEndOfWord, let word = node.word {
+                collected.append((word, node.frequency))
+            }
+
+            // Explore higher-frequency subtrees first to improve early results
             let sortedChildren = node.children.sorted {
                 $0.value.getMaxFrequency() > $1.value.getMaxFrequency()
             }
-            
+
             for (_, childNode) in sortedChildren {
-                if results.count >= limit { break }
                 dfs(childNode)
             }
         }
-        
+
         dfs(self)
-        return results.sorted { $0.1 > $1.1 }
+        if collected.count <= limit { return collected.sorted { $0.1 > $1.1 } }
+        // Partial sort by frequency for efficiency when many items
+        collected.sort { $0.1 > $1.1 }
+        return Array(collected.prefix(limit))
     }
     
     private func getMaxFrequency() -> Int {
@@ -74,4 +88,3 @@ class TrieNode {
         return maxFreq
     }
 }
-

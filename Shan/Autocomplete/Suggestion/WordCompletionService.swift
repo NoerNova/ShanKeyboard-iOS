@@ -17,7 +17,9 @@ class WordCompletionService {
     }
     
     func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
-        return getWordCompletionSuggestions(for: text)
+        // Use the last token as the active prefix for completion
+        let prefix = Tokenizer.shared.getLastToken(from: text) ?? text
+        return getWordCompletionSuggestions(for: prefix)
     }
     
     private func getWordCompletionSuggestions(for text: String) -> [Autocomplete.Suggestion] {

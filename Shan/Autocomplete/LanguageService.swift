@@ -72,6 +72,11 @@ class ShanLanguageService {
     }
     
     func getCurrentIncompleteWord(from text: String) -> String {
+        // Prefer tokenizer: take the last token or partial sequence near the end
+        if let last = Tokenizer.shared.getLastToken(from: text) {
+            return last
+        }
+        // Fallback to simple boundary split
         let components = text.components(separatedBy: wordBoundaryCharacters)
         return components.last?.trimmingCharacters(in: .whitespaces) ?? ""
     }
@@ -135,6 +140,20 @@ class ShanLanguageService {
         }
         
         return structure
+    }
+    
+    func isValidShanWord(_ text: String) -> Bool {
+        if text.isEmpty || text.count < 2 {
+            return false
+        }
+        
+        let onlyVowels = text.unicodeScalars.allSatisfy { shanVowels.contains(String($0)) }
+        if onlyVowels {
+            return false
+        }
+        
+        // Final chck: must be in dictionary
+        return DictionaryService().isValidWord(text)
     }
 }
 
