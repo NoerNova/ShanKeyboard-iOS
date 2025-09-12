@@ -110,34 +110,34 @@ class AutocompleteServiceProvider: AutocompleteService {
         var suggestions: [Autocomplete.Suggestion] = []
         let maxSuggestions = max(3, context.settings.suggestionsDisplayCount)
         
-        // 1. Word completion from learned words (highest priority)
-        suggestions.append(contentsOf: wordCompletion.getSuggestions(for: text))
+//        // 1. Word completion from learned words (highest priority)
+//        suggestions.append(contentsOf: wordCompletion.getSuggestions(for: text))
+//        
+//        // 2. Dictionary word suggestions (prefer words over raw characters)
+//        if suggestions.count < maxSuggestions {
+//            let dicSuggestions = dictionaryService.getDictionarySuggestions(for: text)
+//            let uniqueSuggestions = removeDuplicatesAndInputText(from: dicSuggestions, inputText: text)
+//            suggestions.append(contentsOf: Array(uniqueSuggestions.prefix(maxSuggestions)))
+//        }
         
-//        // 2. Contextual next-word suggestions (bigram-based)
+//        // 3. Contextual next-word suggestions (bigram-based)
 //        if suggestions.count < maxSuggestions {
 //            suggestions.append(contentsOf: contextualService.getSuggestions(for: text))
 //        }
 
-        // 3. Syllable-level predictions
-        if suggestions.count < maxSuggestions {
-            suggestions.append(contentsOf: dictionaryService.getSyllableSuggestions(for: text))
-        }
+//        // 4. Syllable-level predictions
+//        if suggestions.count < maxSuggestions {
+//            suggestions.append(contentsOf: dictionaryService.getSyllableSuggestions(for: text))
+//        }
 
-        // 4. Dictionary word suggestions (prefer words over raw characters)
-        if suggestions.count < maxSuggestions {
-            suggestions.append(contentsOf: dictionaryService.getDictionarySuggestions(for: text))
-        }
 
         // 5. Character-level predictions (fallback only)
         // Character predictions can be noisy for Shan; keep as last resort.
-        if suggestions.count < maxSuggestions {
+        if suggestions.count < maxSuggestions && !dictionaryService.isValidWord(text) {
             suggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
         }
 
-        
-        // Remove duplicates and limit results
-        let uniqueSuggestions = removeDuplicatesAndInputText(from: suggestions, inputText: text)
-        return Array(uniqueSuggestions.prefix(maxSuggestions))
+        return suggestions
     }
     
     private func removeDuplicatesAndInputText(from suggestions: [Autocomplete.Suggestion], inputText: String) -> [Autocomplete.Suggestion] {
@@ -184,7 +184,13 @@ class AutocompleteServiceProvider: AutocompleteService {
         }
         
         let dropped = String(suggestionText.dropFirst(inputText.count))
-        return (dictionaryService.isValidWord(dropped) && dropped.count >= 1) ? dropped : suggestionText
+        guard dropped.count >= 1 else { return suggestionText }
+        
+        // Tokenize the dropped part and take the first token for more natural completion
+        let droppedTokens = Tokenizer.shared.tokenize(dropped)
+        let firstToken = droppedTokens.first ?? dropped
+        
+        return dictionaryService.isValidWord(firstToken) ? firstToken : suggestionText
     }
 }
 
