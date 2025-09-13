@@ -135,7 +135,7 @@ struct HomeScreen: View {
                 VStack(alignment: .leading, spacing: 8) {
                     TextField("Type something in Shan...", text: $text, axis: .vertical)
                         .lineLimit(1...4)
-                        .font(.system(size: 17))
+                        .font(.custom("Shan", size: 16))
                         .padding(16)
                         .background(colorScheme == .dark ? Color.gray.opacity(0.1) : Color.gray.opacity(0.05))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
