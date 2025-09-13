@@ -161,7 +161,7 @@ class CharacterPredictionServiceB {
     private func analyzeSyllableState(_ word: String) -> SyllableState {
         guard !word.isEmpty else { return .shouldStartNewWord }
         
-        let lastChar = String(word.suffix(1))
+//        let lastChar = String(word.suffix(1))
         let hasConsonant = word.contains { shanLanguageService.shanConsonants.contains(String($0)) }
         let hasVowel = word.contains { shanLanguageService.shanVowels.contains(String($0)) }
         let hasToneMark = word.contains { shanLanguageService.shanToneMarks.contains(String($0)) }
