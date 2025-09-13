@@ -18,7 +18,8 @@ class ShanLanguageService {
     
     // MARK: - Common Shan Words for Fallback
     // TODO: Should analyze/research for Shan's common word
-    let commonShanWords = ["ၸၢင်ႈ", "မိူင်း", "ၵုင်း", "ပွၼ်", "လွင်ႈ", "ထၢမ်", "ၸိုင်ႈ", "ပီ", "ႁူဝ်", "ၸႂ်"]
+    let commonShanWords = ["ယဝ်ႉ", "ၶႃႈ", "ဢေႃႈ", "ၵဝ်", "ၶဝ်", "သူ", "ႁဝ်း", "ႁႃး", "ၸဝ်ႈ", "မႂ်ႇသုင်"]
+    let finalConsonants: Set<String> = ["မ်", "ၼ်", "င်", "ပ်", "တ်", "ၵ်", "ျ", "ြ"]
     
     // MARK: - Word Boundary Markers
     let wordBoundaryCharacters = CharacterSet(charactersIn: " ။၊\n\t")
@@ -114,7 +115,8 @@ class ShanLanguageService {
         if shanConsonants.contains(lastCharacter) {
             return ["ိ", "ီ", "ု", "ူ", "ေ", "ျ", "ြ"]
         } else if shanVowels.contains(lastCharacter) {
-            return ["ႇ", "ႈ", "း", "ၵ", "တ", "ပ"]
+            // check if combind with finalConsonants is valid in dictionary
+            return Array(finalConsonants)
         }
         return []
     }
