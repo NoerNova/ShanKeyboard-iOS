@@ -12,7 +12,7 @@ class CharacterPredictionService {
     
     private let dataManager: AutocompleteDataManager
     private let shanService: ShanLanguageService
-    private let characterChainOrder = 3
+    private let characterChainOrder = 5
     
     init(dataManager: AutocompleteDataManager, shanService: ShanLanguageService) {
         self.dataManager = dataManager
