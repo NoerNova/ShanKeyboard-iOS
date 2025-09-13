@@ -28,7 +28,13 @@ class KeyboardViewController: ShanKeyboardInputViewController {
             buttonView: { $0.view },
             collapsedView: { $0.view },
             emojiKeyboard: { $0.view },
-            toolbar: { params in params.view }
+            toolbar: { params in params.view.autocompleteToolbarStyle(
+                .init(item:
+                        .init(
+                            titleFont: .custom("Shan", size: 17)
+                        )
+                )
+            )}
         )}
     }
 }
