@@ -13,7 +13,7 @@ class AutocompleteServiceProvider: AutocompleteService {
     
     // MARK: - Dependencies
     private let wordCompletion: WordCompletionService
-    private let characterPrediction: CharacterPredictionService
+    private let characterPrediction: CharacterPredictionServiceB
     private let dictionaryService: DictionaryService
     private let contextualService: ContextualSuggestionService
     private let dataManager: AutocompleteDataManager
@@ -33,13 +33,14 @@ class AutocompleteServiceProvider: AutocompleteService {
     init(context: AutocompleteContext) {
         self.context = context
         self.dataManager = AutocompleteDataManager()
+        self.dictionaryService = DictionaryService()
         self.shanLanguageService = ShanLanguageService()
         self.wordCompletion = WordCompletionService(dataManager: dataManager)
-        self.characterPrediction = CharacterPredictionService(
-            dataManager: dataManager,
-            shanService: shanLanguageService
-        )
-        self.dictionaryService = DictionaryService()
+//        self.characterPrediction = CharacterPredictionService(
+//            dataManager: dataManager,
+//            shanService: shanLanguageService
+//        )
+        self.characterPrediction = CharacterPredictionServiceB(dataManager: dataManager, dictionaryService: dictionaryService, shanLanguageService: shanLanguageService)
         self.contextualService = ContextualSuggestionService(dataManager: dataManager)
         
         dataManager.loadAllData()
@@ -110,32 +111,32 @@ class AutocompleteServiceProvider: AutocompleteService {
         var suggestions: [Autocomplete.Suggestion] = []
         let maxSuggestions = max(3, context.settings.suggestionsDisplayCount)
         
-//        // 1. Word completion from learned words (highest priority)
-//        suggestions.append(contentsOf: wordCompletion.getSuggestions(for: text))
-//        
-//        // 2. Dictionary word suggestions (prefer words over raw characters)
-//        if suggestions.count < maxSuggestions {
-//            let dicSuggestions = dictionaryService.getDictionarySuggestions(for: text)
-//            let uniqueSuggestions = removeDuplicatesAndInputText(from: dicSuggestions, inputText: text)
-//            suggestions.append(contentsOf: Array(uniqueSuggestions.prefix(maxSuggestions)))
-//        }
+        // 1. Word completion from learned words (highest priority)
+        suggestions.append(contentsOf: wordCompletion.getSuggestions(for: text))
         
-//        // 3. Contextual next-word suggestions (bigram-based)
+        // 2. Dictionary word suggestions (prefer words over raw characters)
+        if suggestions.count < maxSuggestions {
+            let dicSuggestions = dictionaryService.getDictionarySuggestions(for: text)
+            let uniqueSuggestions = removeDuplicatesAndInputText(from: dicSuggestions, inputText: text)
+            suggestions.append(contentsOf: Array(uniqueSuggestions.prefix(maxSuggestions)))
+        }
+        
+        // 3. Syllable-level predictions
+        if suggestions.count < maxSuggestions {
+            suggestions.append(contentsOf: dictionaryService.getSyllableSuggestions(for: text))
+        }
+        
+//        // 4. Contextual next-word suggestions (bigram-based)
 //        if suggestions.count < maxSuggestions {
 //            suggestions.append(contentsOf: contextualService.getSuggestions(for: text))
 //        }
-
-//        // 4. Syllable-level predictions
-//        if suggestions.count < maxSuggestions {
-//            suggestions.append(contentsOf: dictionaryService.getSyllableSuggestions(for: text))
+//
+//
+//        // 5. Character-level predictions (fallback only)
+//        // Character predictions can be noisy for Shan; keep as last resort.
+//        if suggestions.count < maxSuggestions && !dictionaryService.isValidWord(text) {
+//            suggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
 //        }
-
-
-        // 5. Character-level predictions (fallback only)
-        // Character predictions can be noisy for Shan; keep as last resort.
-        if suggestions.count < maxSuggestions && !dictionaryService.isValidWord(text) {
-            suggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
-        }
 
         return suggestions
     }
