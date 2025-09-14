@@ -17,9 +17,10 @@ struct HomeScreen: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedLayout: KeyboardInputSetLayout = SharedUserDefaults.shared.keyboardLayout
+    @State private var showKeyboardPreferences = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     // Hero Section
@@ -50,6 +51,9 @@ struct HomeScreen: View {
             }
             .background(backgroundColor)
             .navigationBarHidden(true)
+            .navigationDestination(isPresented: $showKeyboardPreferences) {
+                KeyboardLayoutPreferencesView()
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .sheet(isPresented: $presentedLicense) {
@@ -59,6 +63,10 @@ struct HomeScreen: View {
         }
         .onAppear {
             selectedLayout = SharedUserDefaults.shared.keyboardLayout
+            checkForPendingNavigation()
+        }
+        .onOpenURL { _ in
+            checkForPendingNavigation()
         }
     }
     
@@ -280,6 +288,22 @@ struct HomeScreen: View {
                 .foregroundColor(.primary)
             
             Spacer()
+        }
+    }
+    
+    private func checkForPendingNavigation() {
+        let sharedDefault = UserDefaults(suiteName: "group.com.noernova.ShanKeyboard.shared")
+        if let pendingNav = sharedDefault?.string(forKey: "pendingNavigation") {
+            sharedDefault?.removeObject(forKey: "pendingNavigation")
+            
+            switch pendingNav {
+            case "KeyboardLayoutPreferencesView":
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    showKeyboardPreferences = true
+                }
+            default:
+                break
+            }
         }
     }
 }
