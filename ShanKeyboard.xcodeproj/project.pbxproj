@@ -17,6 +17,7 @@
 		DDE0BB8D2E6002BF00EBEE7C /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DDE0BB8C2E6002BF00EBEE7C /* ISEmojiView */; };
 		DDE0BB902E60049700EBEE7C /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DDE0BB8F2E60049700EBEE7C /* KeyboardKit */; };
 		DDE0BB932E61619E00EBEE7C /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DDE0BB922E61619E00EBEE7C /* KeyboardKit */; };
+		DDFDB3162E77BDC400FBEFD1 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = DDFDB30F2E77BDC400FBEFD1 /* LICENSE.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -99,6 +100,7 @@
 		DD7E2FFF2C99F82300922A79 /* ShanKeyboardUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShanKeyboardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD7E30192C99FA5B00922A79 /* Shan.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = Shan.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ShanKeyboardShared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DDFDB30F2E77BDC400FBEFD1 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -201,6 +203,7 @@
 		DD7E2FD92C99F82100922A79 = {
 			isa = PBXGroup;
 			children = (
+				DDFDB30F2E77BDC400FBEFD1 /* LICENSE.txt */,
 				DD7E2FE42C99F82100922A79 /* ShanKeyboard */,
 				DD7E2FF82C99F82300922A79 /* ShanKeyboardTests */,
 				DD7E30022C99F82300922A79 /* ShanKeyboardUITests */,
@@ -429,6 +432,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DDFDB3162E77BDC400FBEFD1 /* LICENSE.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
