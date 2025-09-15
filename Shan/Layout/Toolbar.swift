@@ -87,12 +87,14 @@ public extension KeyboardToolbar {
             // Address Information
                  .fullStreetAddress, .streetAddressLine1, .streetAddressLine2,
                  .addressCity, .addressState, .addressCityAndState, .sublocality,
-                 .countryName, .postalCode,
+                 .countryName, .postalCode:
+                return true
             // Financial Information
+            case
                  .creditCardNumber, .creditCardName, .creditCardGivenName,
                  .creditCardMiddleName, .creditCardFamilyName, .creditCardExpiration,
                  .creditCardType:
-                return true
+                return false
                 
             // Security fields - suppress autocomplete
             case .password, .newPassword:
