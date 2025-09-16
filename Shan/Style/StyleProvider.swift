@@ -22,6 +22,25 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
             return KeyboardFont.system(size: buttonFontSize(for: action))
         }
     }
+    
+    override func buttonContentInsets(for action: KeyboardAction) -> EdgeInsets {
+        switch action {
+            case .character("?"):
+                return EdgeInsets(top: 0, leading: 22, bottom: 0, trailing: 22)
+            default:
+                return action.standardButtonContentInsets(for: keyboardContext)
+        }
+    }
+    
+    /// Fixed shift incorrect isPressed color
+    override func buttonForegroundColor(for action: KeyboardAction, isPressed: Bool) -> Color {
+        switch action {
+            case .shift:
+                isPressed ? Color.secondary : Color.primary
+            default:
+                action.standardButtonForegroundColor(for: keyboardContext, isPressed: isPressed)
+        }
+    }
 }
 
 private extension KeyboardAction {
