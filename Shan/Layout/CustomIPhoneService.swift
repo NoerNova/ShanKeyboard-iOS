@@ -41,7 +41,8 @@ class CustomIPhoneService: KeyboardLayout.iPhoneLayoutService {
 //        default:
 //            result.append(.space)
 //        }
-//        #endif
+//        #endif // os(iOS) || os(tvOS) || os(visionOS)
+        
         result.append(.space)
         
         result.append(keyboardReturnAction(for: context))
@@ -99,7 +100,7 @@ private extension CustomIPhoneService {
     
     func customLastSymbolicInputWidth(for context: KeyboardContext) -> KeyboardLayout.ItemWidth {
         // Your custom implementation here
-        return .percentage(0.1) // Example: changed from 0.10 to 0.15
+        return .percentage(0.11) // Example: changed from 0.10 to 0.15
     }
     
     func shouldUpdateUpperCharacterInputWidth(_ row: Int, for context: KeyboardContext) -> Bool {
