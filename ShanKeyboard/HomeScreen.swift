@@ -19,6 +19,8 @@ struct HomeScreen: View {
     @State private var selectedLayout: KeyboardInputSetLayout = SharedUserDefaults.shared.keyboardLayout
     @State private var showKeyboardPreferences = false
     
+    @FocusState private var isFocused: Bool
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -67,6 +69,12 @@ struct HomeScreen: View {
         }
         .onOpenURL { _ in
             checkForPendingNavigation()
+        }
+        .simultaneousGesture(DragGesture().onChanged({ _ in
+            isFocused = false
+        }))
+        .onTapGesture {
+            isFocused = false
         }
     }
     
@@ -151,6 +159,7 @@ struct HomeScreen: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(text.isEmpty ? Color.clear : Color.accentColor.opacity(0.3), lineWidth: 1)
                         )
+                        .focused($isFocused)
                 }
                 
                 // Output display
