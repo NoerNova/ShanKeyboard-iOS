@@ -31,7 +31,7 @@ public extension KeyboardLayout.InputSet {
             .init(
                 chars: "_\\|~<>\(currencies.joined())•",
                 deviceVariations: [.pad: "\(currencies.joined())_^[]{}"]),
-            .init(chars: "x÷.,?!’", deviceVariations: [.pad: "§|~…\\<>!?"])
+            .init(chars: "×÷.,?!’", deviceVariations: [.pad: "§|~…\\<>!?"])
         ])
     }
     
@@ -58,7 +58,7 @@ public extension KeyboardLayout.InputSet {
             .init(
                 chars: "_\\|~<>\(currencies.joined())•",
                 deviceVariations: [.pad: "\(currencies.joined())_^[]{}"]),
-            .init(chars: "x÷.,?!’", deviceVariations: [.pad: "§|~…\\<>!?"])
+            .init(chars: "×÷.,?!’", deviceVariations: [.pad: "§|~…\\<>!?"])
         ])
     }
 }
