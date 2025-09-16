@@ -17,22 +17,45 @@
   ],
   "groups" : [
     {
-      "blur-material" : null,
+      "hidden" : false,
       "layers" : [
         {
-          "blend-mode" : "normal",
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "ShanKeyboard_Logo.png",
-          "name" : "ShanKeyboard_Logo"
+          "fill-specializations" : [
+            {
+              "value" : "none"
+            },
+            {
+              "appearance" : "dark",
+              "value" : "automatic"
+            }
+          ],
+          "glass-specializations" : [
+            {
+              "value" : false
+            },
+            {
+              "appearance" : "dark",
+              "value" : true
+            },
+            {
+              "appearance" : "tinted",
+              "value" : true
+            }
+          ],
+          "image-name" : "ShanKeyboard_Logo 2.png",
+          "name" : "ShanKeyboard_Logo 2",
+          "opacity-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : 0.7
+            }
+          ]
         }
       ],
-      "lighting" : "individual",
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
       },
-      "specular" : true,
       "translucency" : {
         "enabled" : true,
         "value" : 0.5
@@ -40,9 +63,8 @@
     }
   ],
   "supported-platforms" : {
-    "circles" : [
-      "watchOS"
-    ],
-    "squares" : "shared"
+    "squares" : [
+      "iOS"
+    ]
   }
 }
