@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		DD14F4E72E792A7A00A40C54 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
-		DD14F4E82E792A7A00A40C54 /* ShanKeyboardShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		DD14F5522E79FA8500A40C54 /* ShanKeyboardShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD14F5512E79FA8500A40C54 /* ShanKeyboardShared.swift */; };
+		DD14F5582E79FCE800A40C54 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
+		DD14F55D2E79FDCA00A40C54 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
+		DD14F55E2E79FDCA00A40C54 /* ShanKeyboardShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		DD7E30202C99FA5B00922A79 /* Shan.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DD7E30192C99FA5B00922A79 /* Shan.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DD8816D62E61F8B200B1C6DC /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD8816D52E61F8B200B1C6DC /* ISEmojiView */; };
 		DD8816D92E61F8C800B1C6DC /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD8816D82E61F8C800B1C6DC /* KeyboardKit */; };
@@ -19,6 +21,20 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		DD14F55A2E79FCE800A40C54 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD7E2FDA2C99F82100922A79 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD8CE91C2E37A05E00D11AFB;
+			remoteInfo = ShanKeyboardShared;
+		};
+		DD14F55F2E79FDCA00A40C54 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD7E2FDA2C99F82100922A79 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = DD8CE91C2E37A05E00D11AFB;
+			remoteInfo = ShanKeyboardShared;
+		};
 		DD7E2FF62C99F82300922A79 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = DD7E2FDA2C99F82100922A79 /* Project object */;
@@ -40,23 +56,16 @@
 			remoteGlobalIDString = DD7E30182C99FA5B00922A79;
 			remoteInfo = Panglong;
 		};
-		DD8CE9212E37A05E00D11AFB /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = DD7E2FDA2C99F82100922A79 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = DD8CE91C2E37A05E00D11AFB;
-			remoteInfo = ShanKeyboardShared;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		DD14F4E92E792A7A00A40C54 /* Embed Frameworks */ = {
+		DD14F5612E79FDCA00A40C54 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				DD14F4E82E792A7A00A40C54 /* ShanKeyboardShared.framework in Embed Frameworks */,
+				DD14F55E2E79FDCA00A40C54 /* ShanKeyboardShared.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -75,6 +84,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		DD14F5512E79FA8500A40C54 /* ShanKeyboardShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShanKeyboardShared.swift; sourceTree = "<group>"; };
 		DD7E2FE22C99F82100922A79 /* ShanKeyboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShanKeyboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD7E2FF52C99F82300922A79 /* ShanKeyboardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShanKeyboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD7E2FFF2C99F82300922A79 /* ShanKeyboardUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShanKeyboardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -127,11 +137,6 @@
 			path = Shan;
 			sourceTree = "<group>";
 		};
-		DD8CE91E2E37A05E00D11AFB /* ShanKeyboardShared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ShanKeyboardShared;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -139,7 +144,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DD14F4E72E792A7A00A40C54 /* ShanKeyboardShared.framework in Frameworks */,
+				DD14F55D2E79FDCA00A40C54 /* ShanKeyboardShared.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -163,6 +168,7 @@
 			files = (
 				DDE0BB932E61619E00EBEE7C /* KeyboardKit in Frameworks */,
 				DDE0BB8D2E6002BF00EBEE7C /* ISEmojiView in Frameworks */,
+				DD14F5582E79FCE800A40C54 /* ShanKeyboardShared.framework in Frameworks */,
 				DDE0BB902E60049700EBEE7C /* KeyboardKit in Frameworks */,
 				DD8816D92E61F8C800B1C6DC /* KeyboardKit in Frameworks */,
 				DD8816D62E61F8B200B1C6DC /* ISEmojiView in Frameworks */,
@@ -187,7 +193,6 @@
 				DD7E2FF82C99F82300922A79 /* ShanKeyboardTests */,
 				DD7E30022C99F82300922A79 /* ShanKeyboardUITests */,
 				DD7E301A2C99FA5B00922A79 /* Shan */,
-				DD8CE91E2E37A05E00D11AFB /* ShanKeyboardShared */,
 				DD7E302A2C9A063000922A79 /* Frameworks */,
 				DD7E2FE32C99F82100922A79 /* Products */,
 			);
@@ -208,6 +213,7 @@
 		DD7E302A2C9A063000922A79 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DD14F5512E79FA8500A40C54 /* ShanKeyboardShared.swift */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -233,13 +239,13 @@
 				DD7E2FDF2C99F82100922A79 /* Frameworks */,
 				DD7E2FE02C99F82100922A79 /* Resources */,
 				DD7E30252C99FA5B00922A79 /* Embed Foundation Extensions */,
-				DD14F4E92E792A7A00A40C54 /* Embed Frameworks */,
+				DD14F5612E79FDCA00A40C54 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				DD7E301F2C99FA5B00922A79 /* PBXTargetDependency */,
-				DD8CE9222E37A05E00D11AFB /* PBXTargetDependency */,
+				DD14F5602E79FDCA00A40C54 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				DD7E2FE42C99F82100922A79 /* ShanKeyboard */,
@@ -308,6 +314,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				DD14F55B2E79FCE800A40C54 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				DD7E301A2C99FA5B00922A79 /* Shan */,
@@ -336,9 +343,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				DD8CE91E2E37A05E00D11AFB /* ShanKeyboardShared */,
 			);
 			name = ShanKeyboardShared;
 			packageProductDependencies = (
@@ -476,12 +480,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD14F5522E79FA8500A40C54 /* ShanKeyboardShared.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		DD14F55B2E79FCE800A40C54 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD8CE91C2E37A05E00D11AFB /* ShanKeyboardShared */;
+			targetProxy = DD14F55A2E79FCE800A40C54 /* PBXContainerItemProxy */;
+		};
+		DD14F5602E79FDCA00A40C54 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = DD8CE91C2E37A05E00D11AFB /* ShanKeyboardShared */;
+			targetProxy = DD14F55F2E79FDCA00A40C54 /* PBXContainerItemProxy */;
+		};
 		DD7E2FF72C99F82300922A79 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = DD7E2FE12C99F82100922A79 /* ShanKeyboard */;
@@ -496,11 +511,6 @@
 			isa = PBXTargetDependency;
 			target = DD7E30182C99FA5B00922A79 /* Shan */;
 			targetProxy = DD7E301E2C99FA5B00922A79 /* PBXContainerItemProxy */;
-		};
-		DD8CE9222E37A05E00D11AFB /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = DD8CE91C2E37A05E00D11AFB /* ShanKeyboardShared */;
-			targetProxy = DD8CE9212E37A05E00D11AFB /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -637,7 +647,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ShanKeyboard/ShanKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ShanKeyboard/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -682,7 +692,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ShanKeyboard/ShanKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ShanKeyboard/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -818,7 +828,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Shan/Shan.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shan/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Shan;
@@ -849,7 +859,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Shan/Shan.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shan/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Shan;
