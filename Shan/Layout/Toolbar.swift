@@ -55,14 +55,14 @@ public extension KeyboardToolbar {
             } label: {
                 Image(systemName: "gearshape")
             }
-            .padding(.leading, 20)
+            .padding()
             Spacer()
             Button {
                 keyboardController.dismissKeyboard()
             } label: {
                 Image(systemName: "chevron.down")
             }
-            .padding(.trailing, 20)
+            .padding()
         }
     }
 }
