@@ -8,6 +8,7 @@
 import SwiftUI
 import KeyboardKit
 import UIKit
+import ShanKeyboardShared
 
 public struct KeyboardToolbar: View {
     
@@ -44,25 +45,15 @@ public struct KeyboardToolbar: View {
 public extension KeyboardToolbar {
     var hideAutoCompleteView: some View {
         HStack {
-            Button {
-                let sharedDefault = UserDefaults(suiteName: "group.com.noernova.ShanKeyboard.shared")
-                sharedDefault?.set("KeyboardLayoutPreferencesView", forKey: "pendingNavigation")
-                sharedDefault?.synchronize()
-                
-                if let url = URL(string: "ShanKeyboard://") {
-                    keyboardController.openUrl(url)
-                }
-            } label: {
-                Image(systemName: "gearshape")
-            }
-            .padding()
             Spacer()
             Button {
                 keyboardController.dismissKeyboard()
             } label: {
                 Image(systemName: "chevron.down")
             }
+            .font(Font.system(size: 20))
             .padding()
+            .buttonStyle(.bordered)
         }
     }
 }

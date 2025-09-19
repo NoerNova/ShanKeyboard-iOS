@@ -1,0 +1,22 @@
+{
+  "images" : [
+    {
+      "filename" : "ShanKeyboard_icon-iOS-Default-1024x1024@1x.png",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "ShanKeyboard_icon-iOS-Dark-1024x1024@1x.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
