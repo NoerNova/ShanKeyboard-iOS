@@ -8,9 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		DD14F5522E79FA8500A40C54 /* ShanKeyboardShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD14F5512E79FA8500A40C54 /* ShanKeyboardShared.swift */; };
-		DD14F5582E79FCE800A40C54 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
-		DD14F55D2E79FDCA00A40C54 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
-		DD14F55E2E79FDCA00A40C54 /* ShanKeyboardShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		DD3E8D1C2E7C07570048CE06 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
+		DD3E8D1F2E7C078D0048CE06 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
+		DD3E8D202E7C078D0048CE06 /* ShanKeyboardShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		DD7E30202C99FA5B00922A79 /* Shan.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DD7E30192C99FA5B00922A79 /* Shan.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		DD8816D62E61F8B200B1C6DC /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD8816D52E61F8B200B1C6DC /* ISEmojiView */; };
 		DD8816D92E61F8C800B1C6DC /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD8816D82E61F8C800B1C6DC /* KeyboardKit */; };
@@ -59,13 +59,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		DD14F5612E79FDCA00A40C54 /* Embed Frameworks */ = {
+		DD3E8D212E7C078D0048CE06 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				DD14F55E2E79FDCA00A40C54 /* ShanKeyboardShared.framework in Embed Frameworks */,
+				DD3E8D202E7C078D0048CE06 /* ShanKeyboardShared.framework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -144,7 +144,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DD14F55D2E79FDCA00A40C54 /* ShanKeyboardShared.framework in Frameworks */,
+				DD3E8D1F2E7C078D0048CE06 /* ShanKeyboardShared.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -168,7 +168,7 @@
 			files = (
 				DDE0BB932E61619E00EBEE7C /* KeyboardKit in Frameworks */,
 				DDE0BB8D2E6002BF00EBEE7C /* ISEmojiView in Frameworks */,
-				DD14F5582E79FCE800A40C54 /* ShanKeyboardShared.framework in Frameworks */,
+				DD3E8D1C2E7C07570048CE06 /* ShanKeyboardShared.framework in Frameworks */,
 				DDE0BB902E60049700EBEE7C /* KeyboardKit in Frameworks */,
 				DD8816D92E61F8C800B1C6DC /* KeyboardKit in Frameworks */,
 				DD8816D62E61F8B200B1C6DC /* ISEmojiView in Frameworks */,
@@ -239,7 +239,7 @@
 				DD7E2FDF2C99F82100922A79 /* Frameworks */,
 				DD7E2FE02C99F82100922A79 /* Resources */,
 				DD7E30252C99FA5B00922A79 /* Embed Foundation Extensions */,
-				DD14F5612E79FDCA00A40C54 /* Embed Frameworks */,
+				DD3E8D212E7C078D0048CE06 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -647,7 +647,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ShanKeyboard/ShanKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ShanKeyboard/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -692,7 +692,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ShanKeyboard/ShanKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ShanKeyboard/Preview Content\"";
 				ENABLE_APP_SANDBOX = YES;
@@ -828,7 +828,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Shan/Shan.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shan/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Shan;
@@ -859,7 +859,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = Shan/Shan.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Shan/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Shan;

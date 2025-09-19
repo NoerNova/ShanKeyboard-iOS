@@ -19,5 +19,10 @@
 	<array>
 		<string>Shan.ttf</string>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>Launch Screen</string>
+	</dict>
 </dict>
 </plist>
