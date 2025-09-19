@@ -34,13 +34,19 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
     
     /// Fixed shift incorrect isPressed color
     override func buttonForegroundColor(for action: KeyboardAction, isPressed: Bool) -> Color {
-        switch action {
+        if #available(iOS 26.0, *) {
+            switch action {
             case .shift:
-                isPressed ? Color.secondary : Color.primary
+                return isPressed ? Color.secondary : Color.primary
             default:
-                action.standardButtonForegroundColor(for: keyboardContext, isPressed: isPressed)
+                return action.standardButtonForegroundColor(for: keyboardContext, isPressed: isPressed)
+            }
+        } else {
+            // Fallback for < iOS 26
+            return action.standardButtonForegroundColor(for: keyboardContext, isPressed: isPressed)
         }
     }
+
 }
 
 private extension KeyboardAction {
