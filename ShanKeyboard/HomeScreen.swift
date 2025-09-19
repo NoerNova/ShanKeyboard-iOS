@@ -65,10 +65,6 @@ struct HomeScreen: View {
         }
         .onAppear {
             selectedLayout = SharedUserDefaults.shared.keyboardLayout
-            checkForPendingNavigation()
-        }
-        .onOpenURL { _ in
-            checkForPendingNavigation()
         }
         .simultaneousGesture(DragGesture().onChanged({ _ in
             isFocused = false
@@ -138,13 +134,35 @@ struct HomeScreen: View {
                     
                     Spacer()
                     
-                    Text(selectedLayout.rawValue)
-                        .font(.system(size: 14, weight: .medium))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.accentColor.opacity(0.1))
-                        .foregroundColor(.accentColor)
-                        .clipShape(Capsule())
+//                    Text(selectedLayout.rawValue)
+//                        .font(.system(size: 14, weight: .medium))
+//                        .padding(.horizontal, 12)
+//                        .padding(.vertical, 6)
+//                        .background(Color.accentColor.opacity(0.1))
+//                        .foregroundColor(.accentColor)
+//                        .clipShape(Capsule())
+                    Picker(selectedLayout.rawValue, selection: $selectedLayout) {
+                        ForEach(KeyboardInputSetLayout.allCases, id: \.self) { layout in
+                            Text(layout.rawValue).tag(layout)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 300)
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.accentColor.opacity(0.1))
+                    .foregroundColor(.accentColor)
+                    .clipShape(Capsule())
+                    .onChange(of: selectedLayout) { oldValue, newValue in
+                        SharedUserDefaults.shared.keyboardLayout = newValue
+                        DispatchQueue.main.async() {
+                            isFocused = false
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                            isFocused = true
+                        }
+                    }
                 }
                 
                 // Input field
@@ -160,6 +178,7 @@ struct HomeScreen: View {
                                 .stroke(text.isEmpty ? Color.clear : Color.accentColor.opacity(0.3), lineWidth: 1)
                         )
                         .focused($isFocused)
+//                        .autocorrectionDisabled()
                 }
                 
                 // Output display
@@ -297,22 +316,6 @@ struct HomeScreen: View {
                 .foregroundColor(.primary)
             
             Spacer()
-        }
-    }
-    
-    private func checkForPendingNavigation() {
-        let sharedDefault = UserDefaults(suiteName: "group.com.noernova.ShanKeyboard.shared")
-        if let pendingNav = sharedDefault?.string(forKey: "pendingNavigation") {
-            sharedDefault?.removeObject(forKey: "pendingNavigation")
-            
-            switch pendingNav {
-            case "KeyboardLayoutPreferencesView":
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    showKeyboardPreferences = true
-                }
-            default:
-                break
-            }
         }
     }
 }
