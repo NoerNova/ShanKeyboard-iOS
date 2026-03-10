@@ -9,31 +9,23 @@ import Foundation
 import KeyboardKit
 
 class WordCompletionService {
-    
+
     private let dataManager: AutocompleteDataManager
-    
+
     init(dataManager: AutocompleteDataManager) {
         self.dataManager = dataManager
     }
-    
+
     func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
-        // Use the last token as the active prefix for completion
         let prefix = Tokenizer.shared.getLastToken(from: text) ?? text
         return getWordCompletionSuggestions(for: prefix)
     }
-    
+
     private func getWordCompletionSuggestions(for text: String) -> [Autocomplete.Suggestion] {
-        return dataManager.learnedWords
-            .filter { $0.hasPrefix(text) && $0 != text }
-            .sorted { word1, word2 in
-                let freq1 = dataManager.userSyllableFrequency[word1] ?? 0
-                let freq2 = dataManager.userSyllableFrequency[word2] ?? 0
-                if freq1 != freq2 {
-                    return freq1 > freq2
-                }
-                return word1.count < word2.count // Prefer shorter words if same frequency
-            }
-            .prefix(5)
-            .map { Autocomplete.Suggestion(text: $0, type: .regular) }
+        // Use trie-based lookup instead of linear scan
+        let matches = dataManager.searchLearnedWords(prefix: text, limit: 5)
+        return matches
+            .filter { $0.word != text }
+            .map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
     }
 }

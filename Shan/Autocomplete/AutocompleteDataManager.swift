@@ -8,88 +8,94 @@
 import Foundation
 
 class AutocompleteDataManager {
-    
+
     // MARK: - Core Data Properties
     private(set) var userSyllableFrequency: [String: Int] = [:]
     private(set) var userCharacterFrequency: [String: Int] = [:]
-    private(set) var ignoredWords: [String] = []
-    private(set) var learnedWords: [String] = []
-    
+    private(set) var ignoredWordsSet: Set<String> = []
+    private(set) var learnedWordsSet: Set<String> = []
+    private(set) var learnedWordsList: [String] = []
+
+    // Trie for prefix-based completion of learned words
+    private(set) var learnedWordsTrie = TrieNode()
+
     // MARK: - Markov Chains
-    private(set) var characterMarkovChain: [String: [String: Int]] = [:]
     private(set) var syllableMarkovChain: [String: [String: Int]] = [:]
     private(set) var bigramChain: [String: [String: Int]] = [:]
-    
+
     // MARK: - Context Tracking
-    private(set) var recentCharacters: [String] = []
     private(set) var recentSyllables: [String] = []
-    
+
     // MARK: - Constants
-    private let characterChainOrder = 3
     private let syllableChainOrder = 2
-    private let maxRecentCharacters = 20
     private let maxRecentSyllables = 10
-    
+
+    // MARK: - Debounced Persistence
+    private var syllableSaveTimer: Timer?
+    private var learnedWordsSaveTimer: Timer?
+    private let saveDebounceInterval: TimeInterval = 2.0
+
     // MARK: - Services
-    private let shanLanguageService = ShanLanguageService()
-    
+    private var shanLanguageService: ShanLanguageService {
+        SharedResources.shared.shanLanguageService
+    }
+
     // MARK: - Public Interface
     func loadAllData() {
         loadUserSyllables()
         loadIgnoredWords()
         loadLearnedWords()
-        buildCharacterMarkovChain()
         buildSyllableMarkovChain()
         buildBigramChain()
     }
-    
+
+    // Backward-compatible accessors
+    var ignoredWords: [String] { Array(ignoredWordsSet) }
+    var learnedWords: [String] { learnedWordsList }
+
     func hasIgnoredWord(_ word: String) -> Bool {
-        ignoredWords.contains(word)
+        ignoredWordsSet.contains(word)
     }
-    
+
     func hasLearnedWord(_ word: String) -> Bool {
-        learnedWords.contains(word)
+        learnedWordsSet.contains(word)
     }
-    
+
     func ignoreWord(_ word: String) {
-        ignoredWords.append(word)
+        ignoredWordsSet.insert(word)
         saveIgnoredWords()
     }
-    
+
     func learnWord(_ word: String) {
         guard !word.isEmpty else { return }
-        
-        // Learn the complete word/phrase
-        if !learnedWords.contains(word) {
-            learnedWords.append(word)
+
+        if !learnedWordsSet.contains(word) {
+            learnedWordsSet.insert(word)
+            learnedWordsList.append(word)
+            learnedWordsTrie.insert(word, frequency: 1)
         }
-        
+
         // Break into syllables and learn patterns
         let syllables = shanLanguageService.extractSyllables(from: word)
         for syllable in syllables {
             incrementSyllableFrequency(syllable)
         }
-        
-        // Learn character patterns
-        let characters = Array(word).map(String.init)
-        for char in characters {
-            incrementCharacterFrequency(char)
-        }
-        
+
         // Update Markov chains
         updateMarkovChains(with: word)
-        saveLearnedWords()
+        debounceSaveLearnedWords()
     }
-    
+
     func removeIgnoredWord(_ word: String) {
-        ignoredWords.removeAll { $0 == word }
+        ignoredWordsSet.remove(word)
         saveIgnoredWords()
     }
-    
+
     func unlearnWord(_ word: String) {
-        learnedWords.removeAll { $0 == word }
-        
-        // Remove syllable frequencies
+        learnedWordsSet.remove(word)
+        learnedWordsList.removeAll { $0 == word }
+        learnedWordsTrie.remove(word)
+
         let syllables = shanLanguageService.extractSyllables(from: word)
         for syllable in syllables {
             if let count = userSyllableFrequency[syllable], count > 1 {
@@ -98,77 +104,54 @@ class AutocompleteDataManager {
                 userSyllableFrequency[syllable] = nil
             }
         }
-        
-        saveLearnedWords()
-        saveUserSyllables()
+
+        debounceSaveLearnedWords()
+        debounceSaveSyllables()
     }
-    
+
     // MARK: - User Learning Methods
     func userDidTypeCharacter(_ character: String) {
-        incrementCharacterFrequency(character)
-        updateRecentCharacters(with: character)
-        
-        // Update character context
-        if recentCharacters.count >= characterChainOrder {
-            let context = recentCharacters.suffix(characterChainOrder - 1).joined()
-            characterMarkovChain[context, default: [:]][character, default: 0] += 1
-        }
+        userCharacterFrequency[character, default: 0] += 1
     }
-    
+
     func userDidCompleteSyllable(_ syllable: String) {
         incrementSyllableFrequency(syllable)
         updateRecentSyllables(with: syllable)
-        
-        // Update syllable context
+
         if recentSyllables.count >= syllableChainOrder {
             let context = recentSyllables.suffix(syllableChainOrder - 1).joined()
             syllableMarkovChain[context, default: [:]][syllable, default: 0] += 1
         }
     }
-    
+
     func userDidCompletePhrase(_ phrase: String) {
         learnWord(phrase)
-        
-        // Build bigram for phrase-level prediction
+
         let words = parseWordsFromText(phrase)
         for i in 0..<words.count - 1 {
             bigramChain[words[i], default: [:]][words[i + 1], default: 0] += 1
         }
     }
-    
+
     func updateCurrentInput(with text: String) {
-        // Update recent characters
-        let chars = Array(text).map(String.init)
-        for char in chars {
-            updateRecentCharacters(with: char)
-        }
-        
-        // Update recent syllables
         let syllables = shanLanguageService.extractSyllables(from: text)
         for syllable in syllables {
             updateRecentSyllables(with: syllable)
         }
     }
-    
+
+    /// Search learned words by prefix using trie (O(prefix length + results))
+    func searchLearnedWords(prefix: String, limit: Int = 5) -> [(word: String, frequency: Int)] {
+        guard let node = learnedWordsTrie.searchPrefix(prefix) else { return [] }
+        return node.getAllWords(limit: limit)
+    }
+
     // MARK: - Private Helper Methods
     private func incrementSyllableFrequency(_ syllable: String) {
         userSyllableFrequency[syllable, default: 0] += 1
-        saveUserSyllables()
+        debounceSaveSyllables()
     }
-    
-    private func incrementCharacterFrequency(_ character: String) {
-        userCharacterFrequency[character, default: 0] += 1
-    }
-    
-    private func updateRecentCharacters(with character: String) {
-        if recentCharacters.isEmpty || character != recentCharacters.last {
-            recentCharacters.append(character)
-            if recentCharacters.count > maxRecentCharacters {
-                recentCharacters.removeFirst()
-            }
-        }
-    }
-    
+
     private func updateRecentSyllables(with syllable: String) {
         if recentSyllables.isEmpty || syllable != recentSyllables.last {
             recentSyllables.append(syllable)
@@ -177,38 +160,19 @@ class AutocompleteDataManager {
             }
         }
     }
-    
+
     private func parseWordsFromText(_ text: String) -> [String] {
-        // Use the Shan tokenizer to split text into words, since Shan has no spaces
         let tokens = Tokenizer.shared.tokenize(text)
         return tokens.filter { !$0.isEmpty }
     }
-    
+
     // MARK: - Markov Chain Building
-    private func buildCharacterMarkovChain() {
-        characterMarkovChain.removeAll()
-        let allTexts = learnedWords + Array(userSyllableFrequency.keys)
-        
-        for text in allTexts {
-            let chars = Array(text).map(String.init)
-            
-            for i in 0..<chars.count - 1 {
-                for order in 1...min(characterChainOrder, chars.count - i - 1) {
-                    let startIndex = max(0, i - order + 1)
-                    let context = chars[startIndex...i].joined()
-                    let nextChar = chars[i + 1]
-                    characterMarkovChain[context, default: [:]][nextChar, default: 0] += 1
-                }
-            }
-        }
-    }
-    
     private func buildSyllableMarkovChain() {
         syllableMarkovChain.removeAll()
-        
-        for text in learnedWords {
+
+        for text in learnedWordsList {
             let syllables = shanLanguageService.extractSyllables(from: text)
-            
+
             for i in 0..<syllables.count - 1 {
                 for order in 1...min(syllableChainOrder, syllables.count - i - 1) {
                     let startIndex = max(0, i - order + 1)
@@ -219,30 +183,19 @@ class AutocompleteDataManager {
             }
         }
     }
-    
+
     private func buildBigramChain() {
         bigramChain.removeAll()
-        
-        for text in learnedWords {
+
+        for text in learnedWordsList {
             let words = parseWordsFromText(text)
             for i in 0..<words.count - 1 {
                 bigramChain[words[i], default: [:]][words[i + 1], default: 0] += 1
             }
         }
     }
-    
+
     private func updateMarkovChains(with text: String) {
-        // Update character chain
-        let chars = Array(text).map(String.init)
-        for i in 0..<chars.count - 1 {
-            for order in 1...min(characterChainOrder, chars.count - i - 1) {
-                let startIndex = max(0, i - order + 1)
-                let context = chars[startIndex...i].joined()
-                let nextChar = chars[i + 1]
-                characterMarkovChain[context, default: [:]][nextChar, default: 0] += 1
-            }
-        }
-        
         // Update syllable chain
         let syllables = shanLanguageService.extractSyllables(from: text)
         for i in 0..<syllables.count - 1 {
@@ -253,38 +206,61 @@ class AutocompleteDataManager {
                 syllableMarkovChain[context, default: [:]][nextSyllable, default: 0] += 1
             }
         }
-        
+
         // Update bigram chain
         let words = parseWordsFromText(text)
         for i in 0..<words.count - 1 {
             bigramChain[words[i], default: [:]][words[i + 1], default: 0] += 1
         }
     }
-    
+
+    // MARK: - Debounced Persistence
+    private func debounceSaveSyllables() {
+        syllableSaveTimer?.invalidate()
+        syllableSaveTimer = Timer.scheduledTimer(withTimeInterval: saveDebounceInterval, repeats: false) { [weak self] _ in
+            self?.saveUserSyllables()
+        }
+    }
+
+    private func debounceSaveLearnedWords() {
+        learnedWordsSaveTimer?.invalidate()
+        learnedWordsSaveTimer = Timer.scheduledTimer(withTimeInterval: saveDebounceInterval, repeats: false) { [weak self] _ in
+            self?.saveLearnedWords()
+        }
+    }
+
     // MARK: - Persistence
     private func loadUserSyllables() {
         userSyllableFrequency = UserDefaults.standard.object(forKey: "UserSyllableFrequency") as? [String: Int] ?? [:]
         userCharacterFrequency = UserDefaults.standard.object(forKey: "UserCharacterFrequency") as? [String: Int] ?? [:]
     }
-    
+
     private func saveUserSyllables() {
         UserDefaults.standard.set(userSyllableFrequency, forKey: "UserSyllableFrequency")
         UserDefaults.standard.set(userCharacterFrequency, forKey: "UserCharacterFrequency")
     }
-    
+
     private func loadIgnoredWords() {
-        ignoredWords = UserDefaults.standard.object(forKey: "IgnoredWords") as? [String] ?? []
+        let arr = UserDefaults.standard.object(forKey: "IgnoredWords") as? [String] ?? []
+        ignoredWordsSet = Set(arr)
     }
-    
+
     private func saveIgnoredWords() {
-        UserDefaults.standard.set(ignoredWords, forKey: "IgnoredWords")
+        UserDefaults.standard.set(Array(ignoredWordsSet), forKey: "IgnoredWords")
     }
-    
+
     private func loadLearnedWords() {
-        learnedWords = UserDefaults.standard.object(forKey: "LearnedWords") as? [String] ?? []
+        learnedWordsList = UserDefaults.standard.object(forKey: "LearnedWords") as? [String] ?? []
+        learnedWordsSet = Set(learnedWordsList)
+
+        // Build trie from learned words
+        for word in learnedWordsList {
+            let freq = userSyllableFrequency[word] ?? 1
+            learnedWordsTrie.insert(word, frequency: freq)
+        }
     }
-    
+
     private func saveLearnedWords() {
-        UserDefaults.standard.set(learnedWords, forKey: "LearnedWords")
+        UserDefaults.standard.set(learnedWordsList, forKey: "LearnedWords")
     }
 }

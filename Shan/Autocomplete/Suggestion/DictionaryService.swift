@@ -9,25 +9,66 @@ import Foundation
 import KeyboardKit
 
 class DictionaryService {
-    private var trie = TrieNode()
-    private var syllableTrie = TrieNode()
-    private let cacheSize = 1000
+    private(set) var trie = TrieNode()
+    private(set) var syllableTrie = TrieNode()
     private var searchCache = NSCache<NSString, NSArray>()
-    
+    private var validWordCache = NSCache<NSString, NSNumber>()
+
+    // Bigram data: word -> [(nextWord, frequency)]
+    private var bigramData: [String: [(word: String, frequency: Int)]] = [:]
+
+    // Top frequency words for fallback suggestions
+    private(set) var topWords: [String] = []
+
     init() {
+        searchCache.countLimit = 500
+        validWordCache.countLimit = 2000
         loadDictionary()
-        searchCache.countLimit = cacheSize
     }
-    
+
+    // MARK: - Dictionary Loading
+
+    private func loadDictionary() {
+        guard let path = Bundle.main.path(forResource: "filtered_frequency_data", ofType: "json"),
+              let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
+              let dictionaryData = try? JSONDecoder().decode(DictionaryData.self, from: data) else {
+            return
+        }
+
+        // Build word trie
+        var wordsByFreq: [(String, Int)] = []
+        for entry in dictionaryData.words {
+            trie.insert(entry.word, frequency: entry.frequency)
+            wordsByFreq.append((entry.word, entry.frequency))
+        }
+
+        // Build syllable trie
+        for entry in dictionaryData.syllables {
+            syllableTrie.insert(entry.syllable, frequency: entry.frequency)
+        }
+
+        // Store top words for fallback
+        wordsByFreq.sort { $0.1 > $1.1 }
+        topWords = wordsByFreq.prefix(100).map { $0.0 }
+    }
+
+    // MARK: - Prefix Validation
+
+    /// Fast trie-based prefix check - replaces scanning common words
+    func couldBeValidWordPrefix(_ prefix: String) -> Bool {
+        return trie.hasPrefix(prefix)
+    }
+
+    // MARK: - Suggestions
+
     func getDictionarySuggestions(for prefix: String, limit: Int = 5) -> [Autocomplete.Suggestion] {
-        // Use tokenizer to derive the active input token as the prefix
         let activePrefix = Tokenizer.shared.getLastToken(from: prefix) ?? prefix
         let matches = searchWords(prefix: activePrefix, limit: limit)
         return matches.map { match in
             Autocomplete.Suggestion(text: match.word, type: .regular)
         }
     }
-    
+
     func getSyllableSuggestions(for prefix: String, limit: Int = 5) -> [Autocomplete.Suggestion] {
         let activePrefix = Tokenizer.shared.getLastToken(from: prefix) ?? prefix
         let matches = searchSyllables(prefix: activePrefix, limit: limit)
@@ -35,71 +76,89 @@ class DictionaryService {
             Autocomplete.Suggestion(text: match.word, type: .regular)
         }
     }
-    
-    private func loadDictionary() {
-        // Load from JSON format for better performance
-        if let path = Bundle.main.path(forResource: "filtered_frequency_data", ofType: "json"),
-           let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
-           let dictionaryData = try? JSONDecoder().decode(DictionaryData.self, from: data) {
-            
-            // Build word trie
-            for entry in dictionaryData.words {
-                trie.insert(entry.word, frequency: entry.frequency)
-            }
-            
-            // Build syllable trie
-            for entry in dictionaryData.syllables {
-                syllableTrie.insert(entry.syllable, frequency: entry.frequency)
+
+    /// Get next-word suggestions based on frequency, filtered by optional prefix
+    func getNextWordSuggestions(after word: String, prefix: String = "", limit: Int = 5) -> [DictionaryMatch] {
+        // If we have bigram data for this word, use it
+        if let candidates = bigramData[word] {
+            let filtered = prefix.isEmpty
+                ? candidates
+                : candidates.filter { $0.word.hasPrefix(prefix) }
+            return filtered.prefix(limit).map {
+                DictionaryMatch(word: $0.word, frequency: $0.frequency, type: .dictionary)
             }
         }
+
+        // Fallback: top words filtered by prefix
+        if !prefix.isEmpty {
+            return searchWords(prefix: prefix, limit: limit)
+        }
+
+        return topWords.prefix(limit).map {
+            DictionaryMatch(word: $0, frequency: 0, type: .dictionary)
+        }
     }
-    
+
+    // MARK: - Search
+
     func searchWords(prefix: String, limit: Int = 10) -> [DictionaryMatch] {
         let cacheKey = "\(prefix)_\(limit)" as NSString
-        
+
         if let cached = searchCache.object(forKey: cacheKey) as? [DictionaryMatch] {
             return cached
         }
-        
+
         guard let prefixNode = trie.searchPrefix(prefix) else {
             return []
         }
-        
+
         let results = prefixNode.getAllWords(limit: limit).map {
             DictionaryMatch(word: $0.word, frequency: $0.frequency, type: .dictionary)
         }
-        
+
         searchCache.setObject(results as NSArray, forKey: cacheKey)
         return results
     }
-    
+
     func searchSyllables(prefix: String, limit: Int = 5) -> [DictionaryMatch] {
         guard let prefixNode = syllableTrie.searchPrefix(prefix) else {
             return []
         }
-        
+
         return prefixNode.getAllWords(limit: limit).map {
             DictionaryMatch(word: $0.word, frequency: $0.frequency, type: .syllable)
         }
     }
-    
+
+    // MARK: - Validation
+
     func isValidWord(_ text: String) -> Bool {
-        guard !text.isEmpty else {
-            return false
+        guard !text.isEmpty else { return false }
+
+        let key = text as NSString
+        if let cached = validWordCache.object(forKey: key) {
+            return cached.boolValue
         }
-        
-        if trie.contains(text) {
-            return true
+
+        let result = trie.contains(text) || syllableTrie.contains(text)
+        validWordCache.setObject(NSNumber(value: result), forKey: key)
+        return result
+    }
+
+    /// Store bigram from user data for next-word prediction
+    func addBigram(word: String, nextWord: String, frequency: Int) {
+        if bigramData[word] == nil {
+            bigramData[word] = []
         }
-        
-        if syllableTrie.contains(text) {
-            return true
+        if let idx = bigramData[word]?.firstIndex(where: { $0.word == nextWord }) {
+            bigramData[word]?[idx] = (nextWord, bigramData[word]![idx].frequency + frequency)
+        } else {
+            bigramData[word]?.append((word: nextWord, frequency: frequency))
         }
-        
-        return false
-        
     }
 }
+
+// MARK: - Data Structures
 
 struct DictionaryData: Codable {
     let words: [WordEntry]
@@ -118,14 +177,20 @@ struct SyllableEntry: Codable {
     let frequency: Int
 }
 
-struct DictionaryMatch {
+class DictionaryMatch: NSObject {
     let word: String
     let frequency: Int
     let type: MatchType
-    
+
     enum MatchType {
         case dictionary
         case syllable
         case learned
+    }
+
+    init(word: String, frequency: Int, type: MatchType) {
+        self.word = word
+        self.frequency = frequency
+        self.type = type
     }
 }
