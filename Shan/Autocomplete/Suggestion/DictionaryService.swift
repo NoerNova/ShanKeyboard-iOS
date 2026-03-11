@@ -62,7 +62,10 @@ class DictionaryService {
     // MARK: - Suggestions
 
     func getDictionarySuggestions(for prefix: String, limit: Int = 5) -> [Autocomplete.Suggestion] {
-        let activePrefix = Tokenizer.shared.getLastToken(from: prefix) ?? prefix
+        let currentWord = SharedResources.shared.shanLanguageService.getCurrentWord(from: prefix)
+        // Always use the raw word from word boundaries when available.
+        // Never fall back to Tokenizer — it splits incomplete words incorrectly.
+        let activePrefix = !currentWord.isEmpty ? currentWord : (Tokenizer.shared.getLastToken(from: prefix) ?? prefix)
         let matches = searchWords(prefix: activePrefix, limit: limit)
         return matches.map { match in
             Autocomplete.Suggestion(text: match.word, type: .regular)
@@ -70,7 +73,8 @@ class DictionaryService {
     }
 
     func getSyllableSuggestions(for prefix: String, limit: Int = 5) -> [Autocomplete.Suggestion] {
-        let activePrefix = Tokenizer.shared.getLastToken(from: prefix) ?? prefix
+        let currentWord = SharedResources.shared.shanLanguageService.getCurrentWord(from: prefix)
+        let activePrefix = !currentWord.isEmpty ? currentWord : (Tokenizer.shared.getLastToken(from: prefix) ?? prefix)
         let matches = searchSyllables(prefix: activePrefix, limit: limit)
         return matches.map { match in
             Autocomplete.Suggestion(text: match.word, type: .regular)

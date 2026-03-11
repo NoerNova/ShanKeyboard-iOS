@@ -102,6 +102,14 @@ struct ShanGrammarRules {
             }
 
         case .vowel:
+            // After ၢ: expect only finalConsonantBases (consonant) or ႆ, no tone marks
+            if current == "ၢ" {
+                switch nextType {
+                case .consonant: return finalConsonantBases.contains(next)
+                case .kaikhuen: return true
+                default: return false
+                }
+            }
             // After vowel: tone mark, final consonant (via consonant+asat), another consonant (new word)
             switch nextType {
             case .toneMark: return true
@@ -194,6 +202,8 @@ struct ShanGrammarRules {
             return [.consonant]  // word start
         }
 
+        let chars = Array(text).map(String.init)
+        let count = chars.count
         let curType = charType(of: lastChar)
 
         switch curType {
@@ -214,6 +224,17 @@ struct ShanGrammarRules {
             return [.vowel, .specialVowelHoy, .specialVowelGuaiTai, .kaikhuen, .consonant]
 
         case .vowel:
+            // After ိ+ု or ိ+ူ: expect only finalConsonantBases (consonant) to form final with asat
+            if count >= 2 {
+                let secondLast = chars[count - 2]
+                if secondLast == "ိ" && (lastChar == "ု" || lastChar == "ူ") {
+                    return [.consonant]  // only finalConsonantBases, asat follows after
+                }
+            }
+            // After ၢ: expect finalConsonantBases+asat or ႆ
+            if lastChar == "ၢ" {
+                return [.consonant, .kaikhuen]
+            }
             return [.toneMark, .consonant]
 
         case .specialVowelHoy, .specialVowelGuaiTai:
@@ -226,6 +247,13 @@ struct ShanGrammarRules {
             return [.consonant]
 
         case .asat:
+            // After ၵ်, တ်, ပ်: expect tone mark only
+            if count >= 2 {
+                let consonantBefore = chars[count - 2]
+                if consonantBefore == "ၵ" || consonantBefore == "တ" || consonantBefore == "ပ" {
+                    return [.toneMark]
+                }
+            }
             return [.toneMark, .consonant]
 
         case .finalConsonant:

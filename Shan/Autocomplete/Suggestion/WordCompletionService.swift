@@ -17,7 +17,13 @@ class WordCompletionService {
     }
 
     func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
-        let prefix = Tokenizer.shared.getLastToken(from: text) ?? text
+        let currentWord = SharedResources.shared.shanLanguageService.getCurrentWord(from: text)
+        let prefix: String
+        if !currentWord.isEmpty {
+            prefix = currentWord
+        } else {
+            prefix = Tokenizer.shared.getLastToken(from: text) ?? text
+        }
         return getWordCompletionSuggestions(for: prefix)
     }
 

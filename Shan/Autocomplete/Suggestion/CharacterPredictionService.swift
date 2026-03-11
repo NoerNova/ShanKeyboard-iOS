@@ -35,7 +35,24 @@ class CharacterPredictionService {
 
     func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
         let currentWord = getCurrentIncompleteWord(from: text)
+
+        // No suggestions if the word doesn't start with a consonant
+        if let firstChar = currentWord.first.map(String.init),
+           !ShanGrammarRules.consonants.contains(firstChar) {
+            return []
+        }
+
         let lastChar = String(currentWord.suffix(1))
+
+        // After consonant+ၢ (e.g. မၢ): suggest dictionary words matching this prefix
+        if lastChar == "ၢ" && currentWord.count >= 2 {
+            let matches = dictionaryService.searchWords(prefix: currentWord, limit: 5)
+            if !matches.isEmpty {
+                return matches.map {
+                    Autocomplete.Suggestion(text: $0.word, type: .unknown)
+                }
+            }
+        }
 
         // When last char is a finalConsonantBase, build compound suggestions
         // e.g. "ၼမ" → suggest "ၼမ်", "ၼမ်း", "ၼမ်ႉ" etc.
@@ -77,6 +94,13 @@ class CharacterPredictionService {
         }
 
         let currentWord = getCurrentIncompleteWord(from: inputText)
+
+        // No predictions if the word doesn't start with a consonant
+        if let firstChar = currentWord.first.map(String.init),
+           !ShanGrammarRules.consonants.contains(firstChar) {
+            return []
+        }
+
         let lastChar = getLastCharacter(from: inputText)
         let syllableState = analyzeSyllableState(currentWord)
 
@@ -182,6 +206,16 @@ class CharacterPredictionService {
             }
         }
 
+        // After vowels that expect only finalConsonantBases (e.g., after ၢ, ို, ိူ)
+        // expected has .consonant but no .toneMark and no .vowel
+        if expected.contains(.consonant) && !expected.contains(.toneMark) &&
+           !expected.contains(.vowel) && !expected.contains(.medial) {
+            let lastType = ShanGrammarRules.charType(of: lastChar)
+            if lastType == .vowel {
+                return .needsFinalConsonant
+            }
+        }
+
         // If tone marks are expected but not vowels/medials → needs tone mark
         if expected.contains(.toneMark) && !expected.contains(.vowel) && !expected.contains(.medial) {
             return .needsToneMark
@@ -242,7 +276,13 @@ class CharacterPredictionService {
             predictions["ၼ"] = 0.25
             predictions["င"] = 0.2
             predictions["မ"] = 0.15
-            predictions.merge(getToneMarkPredictions(for: word)) { $0 + $1 * 0.5 }
+
+            // After ၢ: also offer ႆ, but no tone marks (ၢ requires final consonant first)
+            if lastChar == "ၢ" {
+                predictions["ႆ"] = 0.2
+            } else {
+                predictions.merge(getToneMarkPredictions(for: word)) { $0 + $1 * 0.5 }
+            }
         }
 
         return predictions

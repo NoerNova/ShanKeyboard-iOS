@@ -130,10 +130,10 @@ class AutocompleteServiceProvider: AutocompleteService {
             allSuggestions.append(contentsOf: spellCorrection.getSuggestions(for: text))
         }
 
-        // 6. Character-level predictions (fallback)
-        if allSuggestions.count < maxSuggestions && !dictionaryService.isValidWord(text) {
-            allSuggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
-        }
+        // 6. Character-level predictions (disabled — not useful yet as standalone suggestions)
+//         if allSuggestions.count < maxSuggestions && !dictionaryService.isValidWord(text) {
+//             allSuggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
+//         }
 
         // Deduplicate at the end
         let deduplicated = deduplicateSuggestions(allSuggestions, inputText: text)

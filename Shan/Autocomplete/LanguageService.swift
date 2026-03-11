@@ -27,6 +27,13 @@ class ShanLanguageService {
     // MARK: - Word Boundary Markers
     let wordBoundaryCharacters = CharacterSet(charactersIn: " ။၊\n\t")
 
+    /// Extract the current word being typed by splitting on word boundaries (no Tokenizer).
+    /// This avoids the Tokenizer incorrectly splitting incomplete words during typing.
+    func getCurrentWord(from text: String) -> String {
+        let components = text.components(separatedBy: wordBoundaryCharacters)
+        return components.last?.trimmingCharacters(in: .whitespaces) ?? ""
+    }
+
     // Regex-based syllable pattern inspired by ShanNLP's syllable_break.py
     // Matches: consonant + optional medial + vowel + optional final consonant + optional tone mark
     private static let syllablePattern: NSRegularExpression? = {
@@ -107,11 +114,14 @@ class ShanLanguageService {
     }
 
     func getCurrentIncompleteWord(from text: String) -> String {
+        let currentWord = getCurrentWord(from: text)
+        if !currentWord.isEmpty {
+            return dictionaryService.isValidWord(currentWord) ? "" : currentWord
+        }
         if let last = Tokenizer.shared.getLastToken(from: text) {
             return dictionaryService.isValidWord(last) ? "" : last
         }
-        let components = text.components(separatedBy: wordBoundaryCharacters)
-        return components.last?.trimmingCharacters(in: .whitespaces) ?? ""
+        return ""
     }
 
     func lastValidToken(in text: String) -> String? {
