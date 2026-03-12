@@ -131,8 +131,11 @@ struct ShanGrammarRules {
                 default: return false
                 }
             }
-            // After ိ: allow compound vowels ို and ိူ
+            // Allow compound vowels: ိ+ု, ိ+ူ, ေ+ႃ
             if current == "ိ" && (next == "ု" || next == "ူ") {
+                return true
+            }
+            if current == "ေ" && next == "ႃ" {
                 return true
             }
             // After vowel: tone mark, final consonant (via consonant+asat), another consonant (new word)
@@ -309,6 +312,10 @@ struct ShanGrammarRules {
             }
             // After ိ: allow compound vowels ို and ိူ
             if lastChar == "ိ" {
+                return [.vowel, .toneMark, .consonant]
+            }
+            // After ေ: allow compound vowel ေႃ
+            if lastChar == "ေ" {
                 return [.vowel, .toneMark, .consonant]
             }
             // After ၢ: expect finalConsonantBases+asat or ႆ
