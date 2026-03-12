@@ -145,9 +145,11 @@ class AutocompleteServiceProvider: AutocompleteService {
         var result: [Autocomplete.Suggestion] = []
 
         let inputIsValid = !inputText.isEmpty && dictionaryService.isValidWord(inputText) && inputText.count > 2
+        let currentWord = SharedResources.shared.shanLanguageService.getCurrentWord(from: inputText)
 
         for suggestion in suggestions {
             guard suggestion.text != inputText else { continue }
+            guard suggestion.text != currentWord else { continue }
             // Reject grammatically invalid suggestions
             guard ShanGrammarRules.isGrammaticallyValid(suggestion.text) else { continue }
 

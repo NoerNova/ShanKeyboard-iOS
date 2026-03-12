@@ -69,7 +69,7 @@ class SpellCorrectionService {
 
     private func generateCandidates(for word: String) -> Set<String> {
         var candidates = Set<String>()
-        let chars = Array(word).map(String.init)
+        let chars = ShanGrammarRules.scalarChars(word)
         let n = chars.count
 
         // All valid Shan characters for insertion/replacement (corrected sets)
@@ -152,8 +152,8 @@ class SpellCorrectionService {
     // MARK: - Shan-Aware Edit Distance
 
     private func shanEditDistance(_ s1: String, _ s2: String) -> Double {
-        let a = Array(s1).map(String.init)
-        let b = Array(s2).map(String.init)
+        let a = ShanGrammarRules.scalarChars(s1)
+        let b = ShanGrammarRules.scalarChars(s2)
         let m = a.count
         let n = b.count
 

@@ -30,8 +30,10 @@ class ShanLanguageService {
     /// Extract the current word being typed by splitting on word boundaries (no Tokenizer).
     /// This avoids the Tokenizer incorrectly splitting incomplete words during typing.
     func getCurrentWord(from text: String) -> String {
-        let components = text.components(separatedBy: wordBoundaryCharacters)
-        return components.last?.trimmingCharacters(in: .whitespaces) ?? ""
+        let segment = text.components(separatedBy: wordBoundaryCharacters)
+            .last?.trimmingCharacters(in: .whitespaces) ?? ""
+        guard !segment.isEmpty else { return "" }
+        return ShanGrammarRules.extractLastIncompleteWord(from: segment)
     }
 
     // Regex-based syllable pattern inspired by ShanNLP's syllable_break.py
@@ -66,16 +68,15 @@ class ShanLanguageService {
     private func extractSyllablesRuleBased(from text: String) -> [String] {
         var syllables: [String] = []
         var currentSyllable = ""
-        let chars = Array(text)
+        let chars = ShanGrammarRules.scalarChars(text)
 
-        for (index, char) in chars.enumerated() {
-            let charStr = String(char)
+        for (index, charStr) in chars.enumerated() {
             currentSyllable += charStr
 
             if shanVowels.contains(charStr) || shanToneMarks.contains(charStr) {
                 let nextIndex = index + 1
                 if nextIndex < chars.count {
-                    let nextChar = String(chars[nextIndex])
+                    let nextChar = chars[nextIndex]
                     if shanConsonants.contains(nextChar) && !shanToneMarks.contains(nextChar) {
                         syllables.append(currentSyllable)
                         currentSyllable = ""
@@ -185,7 +186,7 @@ class ShanLanguageService {
 
     // MARK: - Syllable Structure Analysis
     func analyzeSyllableStructure(_ syllable: String) -> SyllableStructure {
-        let chars = Array(syllable).map(String.init)
+        let chars = ShanGrammarRules.scalarChars(syllable)
         var structure = SyllableStructure()
 
         for char in chars {

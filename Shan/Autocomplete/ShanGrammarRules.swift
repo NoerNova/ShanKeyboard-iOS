@@ -46,6 +46,27 @@ struct ShanGrammarRules {
         return false
     }
 
+    // MARK: - Unicode Scalar Helpers
+
+    /// Split text into individual Unicode scalars as strings.
+    /// Unlike `Array(text)` which groups combining characters into grapheme clusters,
+    /// this preserves each scalar separately (e.g. "မၢ" → ["မ","ၢ"] not ["မၢ"]).
+    static func scalarChars(_ text: String) -> [String] {
+        text.unicodeScalars.map { String($0) }
+    }
+
+    static func scalarCount(_ text: String) -> Int {
+        text.unicodeScalars.count
+    }
+
+    static func lastScalar(_ text: String) -> String? {
+        text.unicodeScalars.last.map { String($0) }
+    }
+
+    static func firstScalar(_ text: String) -> String? {
+        text.unicodeScalars.first.map { String($0) }
+    }
+
     // MARK: - Character Type Classification
 
     enum CharType: Hashable {
@@ -133,8 +154,9 @@ struct ShanGrammarRules {
             }
 
         case .specialVowelGuaiTai:
-            // Rule 5: After ႂ → expect ႆ or final consonant
+            // Rule 5: After ႂ → expect vowel (ႂ acts as medial), ႆ, final consonant, or tone mark
             switch nextType {
+            case .vowel: return true
             case .kaikhuen: return true
             case .consonant: return true
             case .toneMark: return true
@@ -183,7 +205,7 @@ struct ShanGrammarRules {
 
     /// Walks the string checking all adjacent character pairs.
     static func isGrammaticallyValid(_ text: String) -> Bool {
-        let chars = Array(text).map(String.init)
+        let chars = scalarChars(text)
         guard chars.count > 1 else { return true }
 
         for i in 1..<chars.count {
@@ -194,15 +216,65 @@ struct ShanGrammarRules {
         return true
     }
 
+    // MARK: - Word Boundary Detection
+
+    /// Scans backward through continuous Shan text to find the last word boundary,
+    /// returning only the current incomplete word (for trie prefix lookup).
+    static func extractLastIncompleteWord(from text: String) -> String {
+        let scalars = scalarChars(text)
+        guard scalars.count > 1 else { return text }
+
+        let maxScan = min(scalars.count, 50)
+        let startIdx = scalars.count - maxScan
+
+        for i in stride(from: scalars.count - 1, through: startIdx + 1, by: -1) {
+            let curr = scalars[i]
+            let currType = charType(of: curr)
+            guard currType == .consonant else { continue }  // words start with consonants
+
+            let prev = scalars[i - 1]
+            let prevType = charType(of: prev)
+
+            switch prevType {
+            case .toneMark, .asat, .kaikhuen:
+                // DEFINITE boundary: these end a syllable
+                return scalars[i...].joined()
+
+            case .vowel, .specialVowelHoy, .specialVowelGuaiTai:
+                // AMBIGUOUS: consonant after vowel could be final or new word
+                if i + 1 < scalars.count {
+                    let nextType = charType(of: scalars[i + 1])
+                    if nextType == .asat {
+                        continue  // final consonant (same word), keep scanning
+                    }
+                    // Followed by vowel/medial/consonant → new word
+                    return scalars[i...].joined()
+                } else {
+                    // Last character being typed
+                    if finalConsonantBases.contains(curr) {
+                        continue  // likely final consonant needing asat, same word
+                    }
+                    return scalars[i...].joined()
+                }
+
+            default:
+                continue
+            }
+        }
+
+        // No boundary found — return capped segment
+        return scalars[startIdx...].joined()
+    }
+
     // MARK: - Prediction hints
 
     /// Returns the set of CharTypes that can follow the last character of the given text.
     static func expectedNext(after text: String) -> Set<CharType> {
-        guard let lastChar = text.last.map(String.init) else {
+        guard let lastChar = lastScalar(text) else {
             return [.consonant]  // word start
         }
 
-        let chars = Array(text).map(String.init)
+        let chars = scalarChars(text)
         let count = chars.count
         let curType = charType(of: lastChar)
 
@@ -237,8 +309,11 @@ struct ShanGrammarRules {
             }
             return [.toneMark, .consonant]
 
-        case .specialVowelHoy, .specialVowelGuaiTai:
+        case .specialVowelHoy:
             return [.kaikhuen, .consonant, .toneMark]
+
+        case .specialVowelGuaiTai:
+            return [.vowel, .kaikhuen, .consonant, .toneMark]
 
         case .kaikhuen:
             return [.toneMark, .consonant]

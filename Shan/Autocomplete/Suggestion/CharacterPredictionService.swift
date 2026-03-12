@@ -37,15 +37,15 @@ class CharacterPredictionService {
         let currentWord = getCurrentIncompleteWord(from: text)
 
         // No suggestions if the word doesn't start with a consonant
-        if let firstChar = currentWord.first.map(String.init),
+        if let firstChar = ShanGrammarRules.firstScalar(currentWord),
            !ShanGrammarRules.consonants.contains(firstChar) {
             return []
         }
 
-        let lastChar = String(currentWord.suffix(1))
+        let lastChar = ShanGrammarRules.lastScalar(currentWord) ?? ""
 
         // After consonant+ၢ (e.g. မၢ): suggest dictionary words matching this prefix
-        if lastChar == "ၢ" && currentWord.count >= 2 {
+        if lastChar == "ၢ" && ShanGrammarRules.scalarCount(currentWord) >= 2 {
             let matches = dictionaryService.searchWords(prefix: currentWord, limit: 5)
             if !matches.isEmpty {
                 return matches.map {
@@ -56,7 +56,7 @@ class CharacterPredictionService {
 
         // When last char is a finalConsonantBase, build compound suggestions
         // e.g. "ၼမ" → suggest "ၼမ်", "ၼမ်း", "ၼမ်ႉ" etc.
-        if ShanGrammarRules.finalConsonantBases.contains(lastChar) && currentWord.count >= 2 {
+        if ShanGrammarRules.finalConsonantBases.contains(lastChar) && ShanGrammarRules.scalarCount(currentWord) >= 2 {
             var suggestions: [Autocomplete.Suggestion] = []
             let withAsat = text + ShanGrammarRules.asat
 
@@ -96,12 +96,12 @@ class CharacterPredictionService {
         let currentWord = getCurrentIncompleteWord(from: inputText)
 
         // No predictions if the word doesn't start with a consonant
-        if let firstChar = currentWord.first.map(String.init),
+        if let firstChar = ShanGrammarRules.firstScalar(currentWord),
            !ShanGrammarRules.consonants.contains(firstChar) {
             return []
         }
 
-        let lastChar = getLastCharacter(from: inputText)
+        let lastChar = ShanGrammarRules.lastScalar(inputText) ?? ""
         let syllableState = analyzeSyllableState(currentWord)
 
         var predictions: [String: Double]
@@ -160,12 +160,7 @@ class CharacterPredictionService {
     // MARK: - Helper Functions
 
     private func getCurrentIncompleteWord(from text: String) -> String {
-        let components = text.components(separatedBy: shanLanguageService.wordBoundaryCharacters)
-        return components.last ?? ""
-    }
-
-    private func getLastCharacter(from text: String) -> String {
-        return String(text.suffix(1))
+        return shanLanguageService.getCurrentWord(from: text)
     }
 
     private enum SyllableState {
@@ -179,7 +174,7 @@ class CharacterPredictionService {
     private func analyzeSyllableState(_ word: String) -> SyllableState {
         guard !word.isEmpty else { return .shouldStartNewWord }
 
-        let chars = Array(word).map(String.init)
+        let chars = ShanGrammarRules.scalarChars(word)
         let lastChar = chars.last!
         let expected = ShanGrammarRules.expectedNext(after: word)
 
@@ -196,7 +191,7 @@ class CharacterPredictionService {
         // Key rule: if last char is a finalConsonantBase AND there's already a preceding
         // consonant (with or without vowel), this consonant likely forms a final with ်.
         // e.g. "ၼမ" → "ၼမ်", "ၵိၼ" → "ၵိၼ်"
-        if ShanGrammarRules.finalConsonantBases.contains(lastChar) && chars.count >= 2 {
+        if ShanGrammarRules.finalConsonantBases.contains(lastChar) && ShanGrammarRules.scalarCount(word) >= 2 {
             let preceding = chars[chars.count - 2]
             let precType = ShanGrammarRules.charType(of: preceding)
             // If preceded by a consonant, vowel, medial, or special vowel → likely forming final
@@ -245,7 +240,7 @@ class CharacterPredictionService {
         ]
 
         // Offer medials only when they form valid clusters with the last consonant
-        let lastChar = String(word.suffix(1))
+        let lastChar = ShanGrammarRules.lastScalar(word) ?? ""
         if ShanGrammarRules.consonants.contains(lastChar) {
             for medial in ShanGrammarRules.medials {
                 if ShanGrammarRules.isValidCluster(consonant: lastChar, medial: medial) {
@@ -259,7 +254,7 @@ class CharacterPredictionService {
 
     private func getFinalConsonantPredictions(for word: String) -> [String: Double] {
         var predictions: [String: Double] = [:]
-        let lastChar = String(word.suffix(1))
+        let lastChar = ShanGrammarRules.lastScalar(word) ?? ""
 
         // If last char is already a finalConsonantBase (e.g. "ၼမ" → offer ် first)
         if ShanGrammarRules.finalConsonantBases.contains(lastChar) {
@@ -316,7 +311,7 @@ class CharacterPredictionService {
         currentWord: String
     ) -> [String: Double] {
         var validatedPredictions: [String: Double] = [:]
-        let lastChar = currentWord.isEmpty ? nil : String(currentWord.suffix(1))
+        let lastChar = currentWord.isEmpty ? nil : ShanGrammarRules.lastScalar(currentWord)
 
         for (char, probability) in predictions {
             // Grammar filter: reject if canFollow returns false

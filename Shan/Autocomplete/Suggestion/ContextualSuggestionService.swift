@@ -73,7 +73,7 @@ class ContextualSuggestionService {
 
         // Append extensions only if grammatically valid after last character
         if suggestions.count < 3 && !text.isEmpty {
-            let lastChar = String(text.suffix(1))
+            let lastChar = ShanGrammarRules.lastScalar(text) ?? ""
             let commonExtensions = shanService.getCommonExtensions()
             for ext in commonExtensions {
                 // Use grammar rules to filter invalid extensions
