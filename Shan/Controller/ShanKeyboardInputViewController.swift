@@ -12,15 +12,13 @@ class ShanKeyboardInputViewController: KeyboardInputViewController {
     
     override var autocompleteText: String? {
         let text = textDocumentProxy.currentWordPreCursorPart ?? ""
-        
+
         if text.isEmpty {
             return ""
         }
-        
-        if let lastToken = Tokenizer.shared.getLastToken(from: text) {
-            return lastToken
-        }
-        
+
+        // Return the raw text — let individual services handle word extraction.
+        // Using Tokenizer here breaks incomplete words (e.g. "ၵုမ" → "မ").
         return text
     }
 }

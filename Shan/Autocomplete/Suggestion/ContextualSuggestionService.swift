@@ -9,38 +9,44 @@ import Foundation
 import KeyboardKit
 
 class ContextualSuggestionService {
-    
+
     private let dataManager: AutocompleteDataManager
-    private let shanService = ShanLanguageService()
-    
+
+    private var shanService: ShanLanguageService {
+        SharedResources.shared.shanLanguageService
+    }
+
+    private var dictionaryService: DictionaryService {
+        SharedResources.shared.dictionaryService
+    }
+
     init(dataManager: AutocompleteDataManager) {
         self.dataManager = dataManager
     }
-    
+
     func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
         var suggestions: [Autocomplete.Suggestion] = []
-        
-        // Contextual suggestions using bigram/trigram
+
         suggestions.append(contentsOf: getContextualSuggestions(for: text))
-        
-        // Fallback suggestions if needed
+
         if suggestions.count < 3 {
-            suggestions.append(contentsOf: getFallbackSuggestions(for: text, excluding: Set(suggestions.map { $0.text })))
+            suggestions.append(contentsOf: getFallbackSuggestions(
+                for: text,
+                excluding: Set(suggestions.map { $0.text })
+            ))
         }
-        
+
         return suggestions
     }
-    
+
     private func getContextualSuggestions(for text: String) -> [Autocomplete.Suggestion] {
         var results: [Autocomplete.Suggestion] = []
 
-        // Determine context: last complete token for bigram lookup.
         guard let contextToken = shanService.getLastCompleteWord(from: text),
               let candidates = dataManager.bigramChain[contextToken] else {
             return results
         }
 
-        // If the user already started the next token, filter by that prefix.
         let partialNext = shanService.getCurrentIncompleteWord(from: text)
 
         let sorted = candidates.sorted { $0.value > $1.value }
@@ -52,30 +58,35 @@ class ContextualSuggestionService {
 
         return results
     }
-    
+
     private func getFallbackSuggestions(for text: String, excluding: Set<String>) -> [Autocomplete.Suggestion] {
         var suggestions: [Autocomplete.Suggestion] = []
-        
-        // Add common Shan words/syllables as fallbacks
-        for word in shanService.commonShanWords {
+
+        // Use top-frequency words from dictionary instead of hardcoded list
+        let topWords = dictionaryService.topWords
+        for word in topWords {
             if word.hasPrefix(text) && !excluding.contains(word) {
                 suggestions.append(Autocomplete.Suggestion(text: word, type: .regular))
                 if suggestions.count >= 3 { break }
             }
         }
-        
-        // If still not enough, add simple character extensions
+
+        // Append extensions only if grammatically valid after last character
         if suggestions.count < 3 && !text.isEmpty {
+            let lastChar = ShanGrammarRules.lastScalar(text) ?? ""
             let commonExtensions = shanService.getCommonExtensions()
             for ext in commonExtensions {
+                // Use grammar rules to filter invalid extensions
+                guard ShanGrammarRules.canFollow(current: lastChar, next: ext) else { continue }
+
                 let suggestion = text + ext
-                if !excluding.contains(suggestion) {
+                if !excluding.contains(suggestion) && dictionaryService.couldBeValidWordPrefix(suggestion) {
                     suggestions.append(Autocomplete.Suggestion(text: suggestion, type: .unknown))
                     if suggestions.count >= 3 { break }
                 }
             }
         }
-        
+
         return suggestions
     }
 }
