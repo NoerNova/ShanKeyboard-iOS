@@ -38,7 +38,8 @@ public class Tokenizer {
             }
             isLoaded = true
         } catch {
-            print("Error loading dictionary: \(error)")
+            // Silently fail — dictionary loading errors are non-recoverable
+            // and logging in a keyboard extension is a privacy concern
         }
     }
 

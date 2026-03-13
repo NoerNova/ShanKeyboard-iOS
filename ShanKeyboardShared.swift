@@ -38,10 +38,7 @@ public class SharedUserDefaults {
     private let userDefaults: UserDefaults
     
     private init() {
-        guard let userDefaults = UserDefaults(suiteName: AppGroupConstants.appGroupIdentifier) else {
-            fatalError("Failed to create UserDefaults with App Group identifier: \(AppGroupConstants.appGroupIdentifier)")
-        }
-        self.userDefaults = userDefaults
+        self.userDefaults = UserDefaults(suiteName: AppGroupConstants.appGroupIdentifier) ?? .standard
     }
     
     public var keyboardLayout: KeyboardInputSetLayout {
