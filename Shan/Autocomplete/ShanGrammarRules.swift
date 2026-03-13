@@ -161,13 +161,13 @@ struct ShanGrammarRules {
             }
 
         case .specialVowelGuaiTai:
-            // Rule 5: After ႂ → expect vowel (ႂ acts as medial), ႆ, final consonant, or tone mark
+            // Rule 5: After ႂ → expect vowel (ႂ acts as medial), ႆ, final consonant, tone mark, or asat
             switch nextType {
             case .vowel: return true
             case .kaikhuen: return true
             case .consonant: return true
             case .toneMark: return true
-            case .asat: return false
+            case .asat: return true
             default: return false
             }
 
@@ -328,7 +328,7 @@ struct ShanGrammarRules {
             return [.kaikhuen, .consonant, .toneMark]
 
         case .specialVowelGuaiTai:
-            return [.vowel, .kaikhuen, .consonant, .toneMark]
+            return [.vowel, .kaikhuen, .consonant, .toneMark, .asat]
 
         case .kaikhuen:
             return [.toneMark, .consonant]
