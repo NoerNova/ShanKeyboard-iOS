@@ -22,6 +22,7 @@ class AutocompleteServiceProvider: AutocompleteService {
     }
 
     // MARK: - Properties
+    static var isSensitiveTextField = false
     private var context: AutocompleteContext
     // Bounded LRU cache via NSCache (auto-evicts)
     private var suggestionCache = NSCache<NSString, CachedServiceResult>()
@@ -61,6 +62,7 @@ class AutocompleteServiceProvider: AutocompleteService {
     }
 
     func learnWord(_ word: String) {
+        guard !Self.isSensitiveTextField else { return }
         dataManager.learnWord(word)
     }
 
@@ -201,18 +203,22 @@ class AutocompleteServiceProvider: AutocompleteService {
 // MARK: - User Learning Extensions
 extension AutocompleteServiceProvider {
     func userDidTypeCharacter(_ character: String) {
+        guard !Self.isSensitiveTextField else { return }
         dataManager.userDidTypeCharacter(character)
     }
 
     func userDidCompleteSyllable(_ syllable: String) {
+        guard !Self.isSensitiveTextField else { return }
         dataManager.userDidCompleteSyllable(syllable)
     }
 
     func userDidSelectSuggestion(_ suggestion: Autocomplete.Suggestion) {
+        guard !Self.isSensitiveTextField else { return }
         dataManager.learnWord(suggestion.text)
     }
 
     func userDidCompletePhrase(_ phrase: String) {
+        guard !Self.isSensitiveTextField else { return }
         dataManager.userDidCompletePhrase(phrase)
     }
 }

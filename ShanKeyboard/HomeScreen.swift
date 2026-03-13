@@ -18,7 +18,9 @@ struct HomeScreen: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedLayout: KeyboardInputSetLayout = SharedUserDefaults.shared.keyboardLayout
     @State private var showKeyboardPreferences = false
-    
+    @State private var showClearDataAlert = false
+    @State private var showDataCleared = false
+
     @FocusState private var isFocused: Bool
     
     var body: some View {
@@ -40,6 +42,11 @@ struct HomeScreen: View {
                         quickActionsSection
                     }
                     
+                    // Privacy & Data
+                    sectionContainer {
+                        privacySection
+                    }
+
                     // Resources
                     sectionContainer {
                         resourcesSection
@@ -235,6 +242,58 @@ struct HomeScreen: View {
         }
     }
     
+    private var privacySection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            sectionHeader("Privacy & Data", icon: "hand.raised.fill")
+
+            VStack(spacing: 12) {
+                NavigationLink(destination: PrivacyPolicyScreen()) {
+                    ActionCard(
+                        icon: "lock.shield.fill",
+                        title: "Privacy Policy",
+                        subtitle: "How your data is handled",
+                        accent: .teal
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+
+                Button {
+                    showClearDataAlert = true
+                } label: {
+                    ActionCard(
+                        icon: "trash.fill",
+                        title: "Clear Learned Data",
+                        subtitle: "Remove all learned words and frequency data",
+                        accent: .red
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .alert("Clear All Learned Data?", isPresented: $showClearDataAlert) {
+                    Button("Cancel", role: .cancel) { }
+                    Button("Clear All", role: .destructive) {
+                        clearAllLearnedData()
+                        showDataCleared = true
+                    }
+                } message: {
+                    Text("This will remove all learned words, frequency data, and typing patterns. This action cannot be undone.")
+                }
+                .alert("Data Cleared", isPresented: $showDataCleared) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text("All learned data has been removed.")
+                }
+            }
+        }
+    }
+
+    private func clearAllLearnedData() {
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "UserSyllableFrequency")
+        defaults.removeObject(forKey: "UserCharacterFrequency")
+        defaults.removeObject(forKey: "IgnoredWords")
+        defaults.removeObject(forKey: "LearnedWords")
+    }
+
     private var resourcesSection: some View {
         VStack(alignment: .leading, spacing: 20) {
             sectionHeader("Resources", icon: "book.fill")

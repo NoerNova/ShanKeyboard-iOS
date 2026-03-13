@@ -61,7 +61,7 @@ public extension KeyboardToolbar {
 public extension KeyboardToolbar {
     func allowsAutocomplete() -> Bool {
         // Check for secure text entry first
-        if textDocumentProxy.isSecureTextEntry! {
+        if textDocumentProxy.isSecureTextEntry == true {
             return false
         }
         
