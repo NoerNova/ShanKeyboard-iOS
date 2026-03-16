@@ -11,6 +11,7 @@ import KeyboardKit
 class ContextualSuggestionService {
 
     private let dataManager: AutocompleteDataManager
+    private let ngramService: NGramService?
 
     private var shanService: ShanLanguageService {
         SharedResources.shared.shanLanguageService
@@ -20,8 +21,9 @@ class ContextualSuggestionService {
         SharedResources.shared.dictionaryService
     }
 
-    init(dataManager: AutocompleteDataManager) {
+    init(dataManager: AutocompleteDataManager, ngramService: NGramService? = nil) {
         self.dataManager = dataManager
+        self.ngramService = ngramService
     }
 
     func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
@@ -39,7 +41,39 @@ class ContextualSuggestionService {
         return suggestions
     }
 
+    // MARK: - NGram-backed contextual suggestions
+
     private func getContextualSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+        // Use NGram model if loaded
+        if let ngram = ngramService, ngram.isLoaded {
+            return ngramContextualSuggestions(for: text, service: ngram)
+        }
+        return legacyGetContextualSuggestions(for: text)
+    }
+
+    private func ngramContextualSuggestions(
+        for text: String,
+        service: NGramService
+    ) -> [Autocomplete.Suggestion] {
+
+        // `text` is already `currentWordPreCursorPart` — the partial word being typed.
+        // Pass it directly as the prefix filter; do NOT run it through
+        // getCurrentIncompleteWord(), which expects a full sentence.
+        let context = dataManager.contextWindow  // up to 2 recent completed words
+
+        let candidates = service.scoredCandidates(
+            context: context,
+            partialNext: text,
+            userBigramChain: dataManager.bigramChain,
+            limit: 10
+        )
+
+        return candidates.map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
+    }
+
+    // MARK: - Legacy fallback (user bigram chain only)
+
+    private func legacyGetContextualSuggestions(for text: String) -> [Autocomplete.Suggestion] {
         var results: [Autocomplete.Suggestion] = []
 
         guard let contextToken = shanService.getLastCompleteWord(from: text),
@@ -58,6 +92,8 @@ class ContextualSuggestionService {
 
         return results
     }
+
+    // MARK: - Fallback suggestions (unigram frequency + grammar extensions)
 
     private func getFallbackSuggestions(for text: String, excluding: Set<String>) -> [Autocomplete.Suggestion] {
         var suggestions: [Autocomplete.Suggestion] = []

@@ -10,15 +10,37 @@ import UIKit
 
 class ActionHandlerProvider: KeyboardAction.StandardActionHandler {
     
+    private static let sentenceBoundaryCharacters: Set<String> = ["။", "၊", ".", ","]
+
     override func handle(
         _ suggestion: Autocomplete.Suggestion
     ) {
         tryAutolearnSuggestion(suggestion)
-        
+
+        // Advance context window for n-gram scoring
+        if let provider = autocompleteService as? AutocompleteServiceProvider {
+            provider.userDidSelectSuggestion(suggestion)
+        }
+
         // Get current input text to provide context for the suggestion
         let currentInput = keyboardContext.textDocumentProxy.customCurrentWord ?? ""
         keyboardContext.customInsertAutocompleteSuggestion(suggestion, inputText: currentInput)
         handle(.release, on: .character(""))
+    }
+
+    override func handle(
+        _ gesture: Keyboard.Gesture,
+        on action: KeyboardAction
+    ) {
+        super.handle(gesture, on: action)
+
+        // Reset context window at sentence boundaries
+        if gesture == .release, case .character(let char) = action,
+           Self.sentenceBoundaryCharacters.contains(char) {
+            if let provider = autocompleteService as? AutocompleteServiceProvider {
+                provider.userDidCompleteSentence()
+            }
+        }
     }
     
     override func tryApplyAutocorrectSuggestion(
