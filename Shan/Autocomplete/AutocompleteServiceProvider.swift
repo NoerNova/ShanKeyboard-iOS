@@ -16,6 +16,11 @@ class AutocompleteServiceProvider: AutocompleteService {
     private let contextualService: ContextualSuggestionService
     private let spellCorrection: SpellCorrectionService
     private let dataManager: AutocompleteDataManager
+    private let ngramService: NGramService
+
+    /// Set by the view controller so the provider can retrigger autocomplete
+    /// after the NGram model finishes loading on the background queue.
+    var onNgramModelLoaded: (() -> Void)?
 
     private var dictionaryService: DictionaryService {
         SharedResources.shared.dictionaryService
@@ -37,15 +42,23 @@ class AutocompleteServiceProvider: AutocompleteService {
     init(context: AutocompleteContext) {
         self.context = context
         self.dataManager = AutocompleteDataManager()
+        self.ngramService = NGramService()
 
         self.wordCompletion = WordCompletionService(dataManager: dataManager)
         self.characterPrediction = CharacterPredictionService(dataManager: dataManager)
-        self.contextualService = ContextualSuggestionService(dataManager: dataManager)
+        self.contextualService = ContextualSuggestionService(dataManager: dataManager, ngramService: ngramService)
         self.spellCorrection = SpellCorrectionService()
 
         suggestionCache.countLimit = 100
 
         dataManager.loadAllData()
+        ngramService.loadAsync { [weak self] in
+            // Invalidate cache so next request uses the newly loaded model,
+            // then retrigger autocomplete so the display updates immediately
+            // without requiring the user to dismiss and reopen the keyboard.
+            self?.suggestionCache.removeAllObjects()
+            self?.onNgramModelLoaded?()
+        }
     }
 
     // MARK: - AutocompleteService Protocol
@@ -75,7 +88,9 @@ class AutocompleteServiceProvider: AutocompleteService {
     }
 
     func autocomplete(_ text: String) async throws -> Autocomplete.ServiceResult {
-        guard !text.isEmpty else {
+        // When text is empty but context exists, show next-word predictions.
+        // When text is empty and context is empty, nothing to show.
+        if text.isEmpty && dataManager.contextWindow.isEmpty {
             return Autocomplete.ServiceResult(
                 inputText: text,
                 suggestions: [],
@@ -84,8 +99,8 @@ class AutocompleteServiceProvider: AutocompleteService {
             )
         }
 
-        let key = text as NSString
-        if let cached = suggestionCache.object(forKey: key) {
+        let cacheKey = "\(text)||\(dataManager.contextWindow.joined(separator: "|"))" as NSString
+        if let cached = suggestionCache.object(forKey: cacheKey) {
             return cached.result
         }
 
@@ -99,47 +114,59 @@ class AutocompleteServiceProvider: AutocompleteService {
             nextCharacterPredictions: characterPredictions
         )
 
-        suggestionCache.setObject(CachedServiceResult(result), forKey: key)
+        suggestionCache.setObject(CachedServiceResult(result), forKey: cacheKey)
         return result
     }
 
     // MARK: - Main Suggestion Logic
+    //
+    // Three fixed slots, matching native iOS suggestion bar layout:
+    //   Slot 1 (left)   — personal: word the user has typed/learned before
+    //   Slot 2 (middle) — NGram: best context-aware next-word prediction
+    //   Slot 3 (right)  — dictionary: top frequency match
+    //
+    // Each slot gets the best candidate from its source that hasn't already
+    // been claimed by an earlier slot. Fallbacks fill any remaining gaps.
     private func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
         let maxSuggestions = max(3, context.settings.suggestionsDisplayCount)
-        var allSuggestions: [Autocomplete.Suggestion] = []
 
-        // 1. Word completion from learned words (highest priority)
-        allSuggestions.append(contentsOf: wordCompletion.getSuggestions(for: text))
+        // --- Gather candidates from each source ---
+        let personalCandidates  = wordCompletion.getSuggestions(for: text)
+        let ngramCandidates     = contextualService.getSuggestions(for: text)
+        let dictionaryCandidates = dictionaryService.getDictionarySuggestions(for: text)
 
-        // 2. Dictionary word suggestions
-        if allSuggestions.count < maxSuggestions {
-            let dicSuggestions = dictionaryService.getDictionarySuggestions(for: text)
-            allSuggestions.append(contentsOf: dicSuggestions)
+        // Fallbacks used only to fill remaining gaps
+        let syllableCandidates  = dictionaryService.getSyllableSuggestions(for: text)
+        let spellCandidates: [Autocomplete.Suggestion] = (!text.isEmpty
+            && !dictionaryService.isValidWord(text)
+            && !dictionaryService.couldBeValidWordPrefix(text))
+            ? spellCorrection.getSuggestions(for: text) : []
+
+        // --- Assign slots ---
+        var seen = Set<String>()
+        var ordered: [Autocomplete.Suggestion] = []
+
+        func pickFirst(from candidates: [Autocomplete.Suggestion]) {
+            if let s = candidates.first(where: { !seen.contains($0.text) }) {
+                ordered.append(s)
+                seen.insert(s.text)
+            }
         }
 
-        // 3. Contextual next-word suggestions (bigram-based)
-        if allSuggestions.count < maxSuggestions {
-            allSuggestions.append(contentsOf: contextualService.getSuggestions(for: text))
+        pickFirst(from: personalCandidates)   // slot 1
+        pickFirst(from: ngramCandidates)       // slot 2
+        pickFirst(from: dictionaryCandidates)  // slot 3
+
+        // Fill any remaining slots with fallbacks
+        for s in (ngramCandidates + dictionaryCandidates + syllableCandidates + spellCandidates) {
+            guard ordered.count < maxSuggestions else { break }
+            if !seen.contains(s.text) {
+                ordered.append(s)
+                seen.insert(s.text)
+            }
         }
 
-        // 4. Syllable-level predictions
-        if allSuggestions.count < maxSuggestions {
-            allSuggestions.append(contentsOf: dictionaryService.getSyllableSuggestions(for: text))
-        }
-
-        // 5. Spell correction (when input is not a valid word/prefix)
-        if allSuggestions.count < maxSuggestions && !dictionaryService.isValidWord(text) && !dictionaryService.couldBeValidWordPrefix(text) {
-            allSuggestions.append(contentsOf: spellCorrection.getSuggestions(for: text))
-        }
-
-        // 6. Character-level predictions (disabled — not useful yet as standalone suggestions)
-//         if allSuggestions.count < maxSuggestions && !dictionaryService.isValidWord(text) {
-//             allSuggestions.append(contentsOf: characterPrediction.getSuggestions(for: text))
-//         }
-
-        // Deduplicate at the end
-        let deduplicated = deduplicateSuggestions(allSuggestions, inputText: text)
-        return Array(deduplicated.prefix(maxSuggestions))
+        return deduplicateSuggestions(ordered, inputText: text)
     }
 
     private func deduplicateSuggestions(_ suggestions: [Autocomplete.Suggestion], inputText: String) -> [Autocomplete.Suggestion] {
@@ -214,12 +241,60 @@ extension AutocompleteServiceProvider {
 
     func userDidSelectSuggestion(_ suggestion: Autocomplete.Suggestion) {
         guard !Self.isSensitiveTextField else { return }
-        dataManager.learnWord(suggestion.text)
+        // learnWord is already called by KeyboardKit's tryAutolearnSuggestion → learn()
+        dataManager.advanceContext(completedWord: suggestion.text)
+        suggestionCache.removeAllObjects()
     }
 
     func userDidCompletePhrase(_ phrase: String) {
         guard !Self.isSensitiveTextField else { return }
         dataManager.userDidCompletePhrase(phrase)
+
+        // Advance context for each word in the phrase
+        let words = phrase.components(separatedBy: " ").filter { !$0.isEmpty }
+        for word in words { dataManager.advanceContext(completedWord: word) }
+        suggestionCache.removeAllObjects()
+    }
+
+    func userDidCompleteSentence() {
+        dataManager.resetContextAtSentenceBoundary()
+        suggestionCache.removeAllObjects()
+    }
+
+    /// Called on every `textDidChange` — derives context from the raw document text.
+    /// `partialWord` is `currentWordPreCursorPart`: the incomplete word being typed right now.
+    /// It must be stripped before tokenising so it doesn't pollute the context window.
+    func updateContextFromDocument(_ documentContext: String, partialWord: String) {
+        guard !documentContext.isEmpty else {
+            if !dataManager.contextWindow.isEmpty {
+                dataManager.setContextWindow([])
+                suggestionCache.removeAllObjects()
+            }
+            return
+        }
+
+        // Strip the partial word from the end using unicode scalars.
+        // Grapheme-level comparison fails for Shan combining characters.
+        let contextToTokenize: String
+        if !partialWord.isEmpty {
+            let docScalars  = Array(documentContext.unicodeScalars)
+            let wordScalars = Array(partialWord.unicodeScalars)
+            if docScalars.count >= wordScalars.count,
+               Array(docScalars.suffix(wordScalars.count)) == wordScalars {
+                contextToTokenize = String(String.UnicodeScalarView(docScalars.dropLast(wordScalars.count)))
+            } else {
+                contextToTokenize = documentContext
+            }
+        } else {
+            contextToTokenize = documentContext
+        }
+
+        let tokens  = Tokenizer.shared.tokenize(contextToTokenize).filter { !$0.isEmpty }
+        let lastTwo = Array(tokens.suffix(2))
+
+        guard lastTwo != dataManager.contextWindow else { return }
+        dataManager.setContextWindow(lastTwo)
+        suggestionCache.removeAllObjects()
     }
 }
 

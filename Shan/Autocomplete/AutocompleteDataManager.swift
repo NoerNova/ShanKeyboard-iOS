@@ -23,6 +23,23 @@ class AutocompleteDataManager {
     private(set) var syllableMarkovChain: [String: [String: Int]] = [:]
     private(set) var bigramChain: [String: [String: Int]] = [:]
 
+    // MARK: - Context Window (last 2 completed words, newest last)
+    private(set) var contextWindow: [String] = []
+
+    func advanceContext(completedWord: String) {
+        guard !completedWord.isEmpty else { return }
+        contextWindow.append(completedWord)
+        if contextWindow.count > 2 { contextWindow.removeFirst() }
+    }
+
+    func setContextWindow(_ words: [String]) {
+        contextWindow = words
+    }
+
+    func resetContextAtSentenceBoundary() {
+        contextWindow.removeAll()
+    }
+
     // MARK: - Context Tracking
     private(set) var recentSyllables: [String] = []
 
