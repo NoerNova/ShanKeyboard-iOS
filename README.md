@@ -8,26 +8,144 @@ This project builds upon the now-archived [PanglongKeyboard-iOS](https://github.
   <img style="border: gray 1px solid;" width="320px" src="https://github.com/user-attachments/assets/693190bc-2dde-4841-ba7d-ac3fe31a5dcc"></img>
 </p>
 
+## Features
+
 ### Just Type
 This project aims to replicate the native iOS keyboard layout experience for the Shan language. It prioritizes simplicity:
 - **No fancy themes** (though they could be added later).
 - **No cluttered settings buttons** (which can also be added later).
-- **No privacy concerns**—just type!
+- **No privacy concerns** — no open access requested, no network usage — just type!
+
+### Text Autocomplete
+A multi-layered autocomplete system provides intelligent word suggestions using a **3-slot priority system**:
+
+1. **Personal suggestions** — learned words based on user typing history
+2. **Contextual suggestions** — context-aware next-word predictions powered by a pre-trained n-gram (trigram/bigram/unigram) language model
+3. **Dictionary suggestions** — frequency-sorted word matches from a curated Shan word list
+
+With fallbacks to:
+- **Syllable suggestions** — when primary slots are unfilled
+- **Spell correction** — edit-distance-based corrections when input is invalid
+- **Character predictions** — next-character suggestions based on Shan grammar rules
+
+All suggestions are validated through **ShanGrammarRules** to ensure grammatical correctness before display.
+
+### Shan Grammar Rules
+A centralized grammar validation engine (`ShanGrammarRules.swift`) that defines:
+- Consonants, vowels, medials, tone marks, and final consonant rules
+- Valid consonant cluster combinations (hor/lape clusters)
+- Pair-level character validation (`canFollow`)
+- Full string grammatical validation (`isGrammaticallyValid`)
+- Word boundary detection and next-character prediction
+
+### Tokenizer
+A dictionary-based word segmentation engine using dynamic programming for optimal tokenization, with NSCache-based result caching for performance.
+
+## Dependencies
 
 ### KeyboardKit
-This project is based on [KeyboardKit](https://github.com/KeyboardKit/KeyboardKit), which does not yet support the Shan locale. To address this, I created a custom fork: [KeyboardKit-ShanPatched](https://github.com/NoerNova/KeyboardKit). This fork adds some locale information for Shan, although it is not perfect yet. I hope to submit a pull request to the main repository soon.
+This project is based on [KeyboardKit](https://github.com/KeyboardKit/KeyboardKit), which does not yet support the Shan locale. To address this, I created a custom fork: [KeyboardKit-ShanPatched](https://github.com/NoerNova/KeyboardKit). This fork adds locale information for Shan.
 
 ### ISEmojiView
-Since the free version of KeyboardKit doesn't support an emoji keyboard, I integrated [ISEmojiView](https://github.com/isaced/ISEmojiView), a SwiftUI package, to serve as a wrapper for emoji input. It works as intended.
+Since the free version of KeyboardKit doesn't support an emoji keyboard, I integrated [ISEmojiView](https://github.com/isaced/ISEmojiView), a SwiftUI package, to serve as a wrapper for emoji input.
 
-### Text AutoComplete
-This project also implements a basic text autocomplete feature, using the word list from the [ShanNLP](https://github.com/NoerNova/ShanNLP) project. The word list isn't fully optimized for daily typing yet, but I hope to expand it when I have more time and energy.
-Current implements:
-- Words suggestion service: by learned words base on user select
-- Syllable frequency: analyze by [shannews.org](https://shannews.org) domain dataset
-- Dictionary words frequency: analyze by [shannews.org](https://shannews.org) domain dataset
-- Character base
-- Contextual base
+## Project Structure
+
+```
+ShanKeyboard-iOS/
+├── ShanKeyboard/                    # Host app (SwiftUI)
+│   ├── ShanKeyboard.swift           # App entry point
+│   ├── HomeScreen.swift             # Main screen
+│   ├── AddKeyboardScreen.swift      # Setup instructions
+│   ├── LayoutSettings.swift         # Layout configuration
+│   ├── AboutScreen.swift            # About page
+│   └── Fonts/                       # Custom fonts (Shan.ttf)
+│
+├── Shan/                            # Keyboard extension target
+│   ├── KeyboardViewController.swift # Main keyboard view controller
+│   ├── Controller/
+│   │   └── ShanKeyboardInputViewController.swift
+│   ├── Action/
+│   │   └── ActionHandlerProvider.swift
+│   ├── Behavior/
+│   │   └── BehaviorProvider.swift
+│   ├── Callout/
+│   │   └── CalloutProvider.swift
+│   ├── Layout/                      # Keyboard layout (iPhone & iPad)
+│   │   ├── LayoutServiceProvider.swift
+│   │   ├── CustomIPhoneService.swift
+│   │   ├── CustomIPadService.swift
+│   │   ├── KeyboardInputSet.swift
+│   │   └── Toolbar.swift
+│   ├── Style/
+│   │   └── StyleProvider.swift
+│   └── Autocomplete/                # Autocomplete pipeline
+│       ├── AutocompleteServiceProvider.swift  # Main orchestrator
+│       ├── AutocompleteDataManager.swift      # User learning & context
+│       ├── LanguageService.swift              # Shan language parsing
+│       ├── ShanGrammarRules.swift             # Grammar validation
+│       ├── SharedResources.swift              # Singleton resource manager
+│       ├── Tokenizer/
+│       │   └── Tokenizer.swift                # Word segmentation
+│       ├── Suggestion/                        # Suggestion services
+│       │   ├── WordCompletionService.swift
+│       │   ├── ContextualSuggestionService.swift
+│       │   ├── DictionaryService.swift
+│       │   ├── NGramService.swift
+│       │   ├── SpellCorrectionService.swift
+│       │   ├── CharacterPredictionService.swift
+│       │   └── TrieNode.swift
+│       └── Resource/                          # Data files
+│           ├── dictionary.txt
+│           ├── filtered_frequency_data.json
+│           ├── filtered_frequency_data.plist
+│           ├── bigram_data.json
+│           └── bigram_data.plist
+│
+├── Scripts/
+│   └── convert_resources.sh         # JSON → binary plist converter
+│
+├── ShanKeyboardTests/               # Unit tests
+└── ShanKeyboardUITests/             # UI tests
+```
+
+## Development
+
+### Prerequisites
+- Xcode (latest stable version)
+- iOS Simulator or physical device
+
+### Build & Run
+
+```bash
+# Build the keyboard extension
+xcodebuild -scheme Shan -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+
+# Build the host app
+xcodebuild -scheme ShanKeyboard -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
+
+Or open `ShanKeyboard.xcodeproj` in Xcode and select the **Shan** scheme to build the keyboard extension, or the **ShanKeyboard** scheme for the host app.
+
+### Resource Build Pipeline
+A pre-build script (`Scripts/convert_resources.sh`) automatically converts JSON resource files to binary plist format for faster runtime parsing. This runs before the "Copy Bundle Resources" build phase. If you update `filtered_frequency_data.json` or `bigram_data.json`, the binary plist files will be regenerated on the next build.
+
+### Testing on Device
+1. Build and run the **ShanKeyboard** host app on a simulator or device.
+2. Go to **Settings → General → Keyboard → Keyboards → Add New Keyboard**.
+3. Select **ShanKeyboard — Shan**.
+4. Switch to the Shan keyboard in any text input field.
+
+### Data Sources
+- **Word list & dictionary**: sourced from the [ShanNLP](https://github.com/NoerNova/ShanNLP) project
+- **Word/syllable frequency data**: analyzed from the [shannews.org](https://shannews.org) domain dataset
+- **N-gram language model**: pre-trained bigram/trigram model analyzed from the [shannews.org](https://shannews.org) domain dataset
+
+## Privacy
+- The keyboard does **not** request open access (`RequestsOpenAccess: false`)
+- No network requests are made
+- Sensitive text detection is enabled for passwords and credit card fields
+- Privacy manifests (`PrivacyInfo.xcprivacy`) are included in both targets
 
 ## Publishing Plans
 I don't plan to publish this app on the App Store anytime soon. However, if anyone is interested, feel free to help with that or use this project as a foundation for developing production apps.
@@ -41,7 +159,7 @@ Feel free to reach out if you have questions or if you want to contribute in any
 
 * Website: [noernova.com](https://noernova.com)
 * Twitter: [@noer_nova](https://twitter.com/noer_nova)
-* E-mail: [norhsangpha@gmail.com](mailto:norhsangpha@gmail)
+* E-mail: [norhsangpha@gmail.com](mailto:norhsangpha@gmail.com)
 
 ## LICENSE
 MIT
