@@ -1,2 +1,5 @@
 
 .DS_Store
+
+# Generated binary plist files (built from JSON sources)
+Shan/Autocomplete/Resource/*.plist
