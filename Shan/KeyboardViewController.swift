@@ -38,7 +38,7 @@ extension KeyboardViewController {
     func setupServices() {
         
         let autocompleteProvider = AutocompleteServiceProvider(context: state.autocompleteContext)
-        autocompleteProvider.onNgramModelLoaded = { [weak self] in
+        autocompleteProvider.onModelLoaded = { [weak self] in
             self?.performAutocomplete()
         }
         services.autocompleteService = autocompleteProvider
