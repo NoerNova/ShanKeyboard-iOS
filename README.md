@@ -2,10 +2,24 @@
 
 This project builds upon the now-archived [PanglongKeyboard-iOS](https://github.com/NoerNova/PanglongKeyboard-iOS), aiming to make customizing the Shan language keyboard layout for iOS much easier—until native support by Apple becomes available.
 
+### iPhone
 <p align="center">
-  <img style="border: gray 1px solid;" width="320px" src="https://github.com/user-attachments/assets/c423fcd6-bea4-4766-8470-ffbb57ea1026"></img>
+  <img style="border: gray 1px solid;" width="200px" src="Screenshots/home_screen.png"></img>
   &nbsp;&nbsp;
-  <img style="border: gray 1px solid;" width="320px" src="https://github.com/user-attachments/assets/693190bc-2dde-4841-ba7d-ac3fe31a5dcc"></img>
+  <img style="border: gray 1px solid;" width="200px" src="Screenshots/keyboard_typing.png"></img>
+  &nbsp;&nbsp;
+  <img style="border: gray 1px solid;" width="200px" src="Screenshots/emoji_keyboard.png"></img>
+  &nbsp;&nbsp;
+  <img style="border: gray 1px solid;" width="200px" src="Screenshots/layout_settings.png"></img>
+</p>
+
+### iPad
+<p align="center">
+  <img style="border: gray 1px solid;" width="280px" src="Screenshots/ipad_home_screen.png"></img>
+  &nbsp;&nbsp;
+  <img style="border: gray 1px solid;" width="280px" src="Screenshots/ipad_keyboard_typing.png"></img>
+  &nbsp;&nbsp;
+  <img style="border: gray 1px solid;" width="280px" src="Screenshots/ipad_keyboard_dark.png"></img>
 </p>
 
 ## Features
