@@ -147,8 +147,11 @@ A pre-build script (`Scripts/convert_resources.sh`) automatically converts JSON 
 - Sensitive text detection is enabled for passwords and credit card fields
 - Privacy manifests (`PrivacyInfo.xcprivacy`) are included in both targets
 
-## Publishing Plans
-I don't plan to publish this app on the App Store anytime soon. However, if anyone is interested, feel free to help with that or use this project as a foundation for developing production apps.
+## Download
+
+[![Download on the App Store](https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg)](https://apps.apple.com/th/app/shankeyboard/id6752576307)
+
+The app is available on the [App Store](https://apps.apple.com/th/app/shankeyboard/id6752576307). Feel free to also use this project as a foundation for developing your own keyboard apps.
 
 ## Support Me
 
