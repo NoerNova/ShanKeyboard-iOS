@@ -55,16 +55,22 @@ class NGramService {
 
     private func loadModel() {
         guard
-            let url = Bundle.main.url(forResource: "bigram_data", withExtension: "json")
+            let url = Bundle.main.url(forResource: "bigram_data", withExtension: "plist")
+                   ?? extensionBundle().url(forResource: "bigram_data", withExtension: "plist")
+                   ?? Bundle.main.url(forResource: "bigram_data", withExtension: "json")
                    ?? extensionBundle().url(forResource: "bigram_data", withExtension: "json")
         else {
-            // Also try the keyboard extension bundle explicitly
             return
         }
 
         do {
             let data = try Data(contentsOf: url)
-            let raw = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let raw: [String: Any]?
+            if url.pathExtension == "plist" {
+                raw = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+            } else {
+                raw = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            }
             guard let raw else { return }
             model = try parseModel(raw)
         } catch {

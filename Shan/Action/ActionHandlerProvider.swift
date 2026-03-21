@@ -148,9 +148,27 @@ private extension UITextDocumentProxy {
     }
     
     func customReplaceCurrentWordPreCursorPart(with replacement: String) {
-        if let text = customCurrentWord {
-            // Use unicodeScalars.count: iOS deleteBackward() removes one scalar
-            // at a time for Shan combining characters (e.g. "ၢ").
+        let preCursor = currentWordPreCursorPart ?? ""
+        let preScalars = Array(preCursor.unicodeScalars)
+        let repScalars = Array(replacement.unicodeScalars)
+
+        // Find the longest suffix of the pre-cursor text that matches
+        // a prefix of the replacement. This handles multi-syllable Shan words
+        // where extractLastIncompleteWord only returns the last syllable,
+        // but the suggestion contains the full word (e.g. typed "မၢၵ်ႇၽ",
+        // suggestion "မၢၵ်ႇၽႃႈ" — overlap is all 6 scalars, not just "ၽ").
+        let maxCheck = min(preScalars.count, repScalars.count)
+        var overlapLength = 0
+        for len in stride(from: maxCheck, through: 1, by: -1) {
+            if Array(preScalars.suffix(len)) == Array(repScalars.prefix(len)) {
+                overlapLength = len
+                break
+            }
+        }
+
+        if overlapLength > 0 {
+            deleteBackward(times: overlapLength)
+        } else if let text = customCurrentWord {
             deleteBackward(times: text.unicodeScalars.count)
         }
         insertText(replacement)

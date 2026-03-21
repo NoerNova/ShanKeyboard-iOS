@@ -11,6 +11,7 @@ import KeyboardKit
 class DictionaryService {
     private(set) var trie = TrieNode()
     private(set) var syllableTrie = TrieNode()
+    private(set) var isLoaded = false
     private var searchCache = NSCache<NSString, NSArray>()
     private var validWordCache = NSCache<NSString, NSNumber>()
 
@@ -23,33 +24,62 @@ class DictionaryService {
     init() {
         searchCache.countLimit = 500
         validWordCache.countLimit = 2000
-        loadDictionary()
+    }
+
+    // MARK: - Async Loading
+
+    func loadAsync(completion: (() -> Void)? = nil) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self else { return }
+            let (newTrie, newSyllableTrie, newTopWords) = self.buildDictionaryData()
+            DispatchQueue.main.async {
+                self.trie = newTrie
+                self.syllableTrie = newSyllableTrie
+                self.topWords = newTopWords
+                self.isLoaded = true
+                completion?()
+            }
+        }
     }
 
     // MARK: - Dictionary Loading
 
-    private func loadDictionary() {
-        guard let path = Bundle.main.path(forResource: "filtered_frequency_data", ofType: "json"),
-              let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
-              let dictionaryData = try? JSONDecoder().decode(DictionaryData.self, from: data) else {
-            return
+    private func buildDictionaryData() -> (TrieNode, TrieNode, [String]) {
+        guard let url = Bundle.main.url(forResource: "filtered_frequency_data", withExtension: "plist")
+                     ?? Bundle(for: DictionaryService.self).url(forResource: "filtered_frequency_data", withExtension: "plist")
+                     ?? Bundle.main.url(forResource: "filtered_frequency_data", withExtension: "json")
+                     ?? Bundle(for: DictionaryService.self).url(forResource: "filtered_frequency_data", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            return (TrieNode(), TrieNode(), [])
         }
 
-        // Build word trie
+        let dictionaryData: DictionaryData?
+        if url.pathExtension == "plist" {
+            dictionaryData = try? PropertyListDecoder().decode(DictionaryData.self, from: data)
+        } else {
+            dictionaryData = try? JSONDecoder().decode(DictionaryData.self, from: data)
+        }
+
+        guard let dictionaryData else {
+            return (TrieNode(), TrieNode(), [])
+        }
+
+        let newTrie = TrieNode()
         var wordsByFreq: [(String, Int)] = []
         for entry in dictionaryData.words {
-            trie.insert(entry.word, frequency: entry.frequency)
+            newTrie.insert(entry.word, frequency: entry.frequency)
             wordsByFreq.append((entry.word, entry.frequency))
         }
 
-        // Build syllable trie
+        let newSyllableTrie = TrieNode()
         for entry in dictionaryData.syllables {
-            syllableTrie.insert(entry.syllable, frequency: entry.frequency)
+            newSyllableTrie.insert(entry.syllable, frequency: entry.frequency)
         }
 
-        // Store top words for fallback
         wordsByFreq.sort { $0.1 > $1.1 }
-        topWords = wordsByFreq.prefix(100).map { $0.0 }
+        let newTopWords = wordsByFreq.prefix(100).map { $0.0 }
+
+        return (newTrie, newSyllableTrie, newTopWords)
     }
 
     // MARK: - Prefix Validation

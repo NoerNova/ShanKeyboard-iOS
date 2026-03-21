@@ -19,8 +19,8 @@ class AutocompleteServiceProvider: AutocompleteService {
     private let ngramService: NGramService
 
     /// Set by the view controller so the provider can retrigger autocomplete
-    /// after the NGram model finishes loading on the background queue.
-    var onNgramModelLoaded: (() -> Void)?
+    /// after background models finish loading.
+    var onModelLoaded: (() -> Void)?
 
     private var dictionaryService: DictionaryService {
         SharedResources.shared.dictionaryService
@@ -52,12 +52,15 @@ class AutocompleteServiceProvider: AutocompleteService {
         suggestionCache.countLimit = 100
 
         dataManager.loadAllData()
-        ngramService.loadAsync { [weak self] in
-            // Invalidate cache so next request uses the newly loaded model,
-            // then retrigger autocomplete so the display updates immediately
-            // without requiring the user to dismiss and reopen the keyboard.
+
+        SharedResources.shared.dictionaryService.loadAsync { [weak self] in
             self?.suggestionCache.removeAllObjects()
-            self?.onNgramModelLoaded?()
+            self?.onModelLoaded?()
+        }
+
+        ngramService.loadAsync { [weak self] in
+            self?.suggestionCache.removeAllObjects()
+            self?.onModelLoaded?()
         }
     }
 

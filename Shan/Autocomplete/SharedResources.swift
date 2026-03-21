@@ -10,7 +10,7 @@ import Foundation
 final class SharedResources {
     static let shared = SharedResources()
 
-    lazy var dictionaryService: DictionaryService = DictionaryService()
+    let dictionaryService = DictionaryService()
     lazy var shanLanguageService: ShanLanguageService = ShanLanguageService()
 
     // Tokenizer already has its own singleton via Tokenizer.shared
