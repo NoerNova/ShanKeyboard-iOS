@@ -344,13 +344,13 @@ struct HomeScreen: View {
                 .padding(.vertical, 20)
             
             HStack {
-                Text("Version 1.0")
+                Text("Version 1.1")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 
                 Spacer()
                 
-                Text("© 2025 NoerNova")
+                Text("© 2026 NoerNova")
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
             }
