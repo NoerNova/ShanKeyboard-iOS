@@ -23,14 +23,14 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
         }
     }
     
-    override func buttonContentInsets(for action: KeyboardAction) -> EdgeInsets {
-        switch action {
-            case .character("?"):
-                return EdgeInsets(top: 0, leading: 22, bottom: 0, trailing: 22)
-            default:
-                return action.standardButtonContentInsets(for: keyboardContext)
-        }
-    }
+//    override func buttonContentInsets(for action: KeyboardAction) -> EdgeInsets {
+//        switch action {
+//            case .character("?"):
+//                return EdgeInsets(top: 0, leading: 22, bottom: 0, trailing: 22)
+//            default:
+//                return action.standardButtonContentInsets(for: keyboardContext)
+//        }
+//    }
     
     /// Fixed shift incorrect isPressed color
     override func buttonForegroundColor(for action: KeyboardAction, isPressed: Bool) -> Color {
@@ -46,15 +46,12 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
             return action.standardButtonForegroundColor(for: keyboardContext, isPressed: isPressed)
         }
     }
-
 }
 
 private extension KeyboardAction {
-    
     var fontScaleFactor: Double {
         return 1.0
     }
-    
     var replacementAction: KeyboardAction? {
         return .primary(.continue)
     }
