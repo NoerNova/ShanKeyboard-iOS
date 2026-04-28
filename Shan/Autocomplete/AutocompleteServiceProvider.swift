@@ -53,15 +53,22 @@ class AutocompleteServiceProvider: AutocompleteService {
 
         dataManager.loadAllData()
 
+        // Load sequentially to avoid a concurrent memory spike that terminates
+        // the extension on memory-constrained devices (iPhone 13/14, iOS 26+).
+        // DictionaryService first; NGramService starts only after it completes.
         SharedResources.shared.dictionaryService.loadAsync { [weak self] in
-            self?.suggestionCache.removeAllObjects()
-            self?.onModelLoaded?()
+            guard let self else { return }
+            self.suggestionCache.removeAllObjects()
+            self.onModelLoaded?()
+            self.ngramService.loadAsync { [weak self] in
+                self?.suggestionCache.removeAllObjects()
+                self?.onModelLoaded?()
+            }
         }
+    }
 
-        ngramService.loadAsync { [weak self] in
-            self?.suggestionCache.removeAllObjects()
-            self?.onModelLoaded?()
-        }
+    func clearCaches() {
+        suggestionCache.removeAllObjects()
     }
 
     // MARK: - AutocompleteService Protocol

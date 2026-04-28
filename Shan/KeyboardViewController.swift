@@ -18,6 +18,13 @@ class KeyboardViewController: ShanKeyboardInputViewController {
         super.viewDidLoad()
     }
     
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        if let provider = services.autocompleteService as? AutocompleteServiceProvider {
+            provider.clearCaches()
+        }
+    }
+
     override func viewWillSetupKeyboardView() {
         super.viewWillSetupKeyboardView()
         
