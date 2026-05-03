@@ -49,7 +49,8 @@ class AutocompleteServiceProvider: AutocompleteService {
         self.contextualService = ContextualSuggestionService(dataManager: dataManager, ngramService: ngramService)
         self.spellCorrection = SpellCorrectionService()
 
-        suggestionCache.countLimit = 100
+        let lowRAM = ProcessInfo.processInfo.physicalMemory < 5_368_709_120
+        suggestionCache.countLimit = lowRAM ? 30 : 100
 
         dataManager.loadAllData()
 
@@ -69,6 +70,12 @@ class AutocompleteServiceProvider: AutocompleteService {
 
     func clearCaches() {
         suggestionCache.removeAllObjects()
+    }
+
+    /// Releases the NGram model (~15–25 MB) under severe memory pressure.
+    /// Suggestions fall back to DictionaryService until the next load cycle.
+    func purgeHeavyModels() {
+        ngramService.purge()
     }
 
     // MARK: - AutocompleteService Protocol

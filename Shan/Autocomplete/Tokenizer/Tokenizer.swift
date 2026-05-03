@@ -17,8 +17,13 @@ public class Tokenizer {
     private var tokenizationCache = NSCache<NSString, TokenizationCacheEntry>()
 
     init() {
-        tokenizationCache.countLimit = 200
-        loadDictionary()
+        let lowRAM = ProcessInfo.processInfo.physicalMemory < 5_368_709_120
+        tokenizationCache.countLimit = lowRAM ? 50 : 200
+        // Load on a background queue so init() does not block the main thread.
+        // tokenize() returns [] until loading completes, which is safe for all callers.
+        DispatchQueue.global(qos: .utility).async { [weak self] in
+            self?.loadDictionary()
+        }
     }
 
     private func loadDictionary() {
@@ -27,16 +32,24 @@ public class Tokenizer {
         }
 
         do {
-            let content = try String(contentsOfFile: path)
+            let content = try String(contentsOfFile: path, encoding: .utf8)
             let words = content.components(separatedBy: .newlines)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
 
+            let newTrie = TrieNode()
+            var newMaxLength = 0
             for word in words {
-                dictionaryTrie.insert(word, frequency: 1)
-                maxWordLength = max(maxWordLength, word.count)
+                newTrie.insert(word, frequency: 1)
+                newMaxLength = max(newMaxLength, word.count)
             }
-            isLoaded = true
+            // Swap onto main thread to avoid data races with tokenize() callers.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.dictionaryTrie = newTrie
+                self.maxWordLength = newMaxLength
+                self.isLoaded = true
+            }
         } catch {
             // Silently fail — dictionary loading errors are non-recoverable
             // and logging in a keyboard extension is a privacy concern

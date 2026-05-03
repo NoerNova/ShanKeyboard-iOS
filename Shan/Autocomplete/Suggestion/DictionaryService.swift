@@ -22,8 +22,10 @@ class DictionaryService {
     private(set) var topWords: [String] = []
 
     init() {
-        searchCache.countLimit = 500
-        validWordCache.countLimit = 2000
+        // Smaller caches on low-RAM devices (< 5 GB physical memory)
+        let lowRAM = ProcessInfo.processInfo.physicalMemory < 5_368_709_120
+        searchCache.countLimit = lowRAM ? 100 : 500
+        validWordCache.countLimit = lowRAM ? 500 : 2000
     }
 
     // MARK: - Async Loading
@@ -49,7 +51,9 @@ class DictionaryService {
                      ?? Bundle(for: DictionaryService.self).url(forResource: "filtered_frequency_data", withExtension: "plist")
                      ?? Bundle.main.url(forResource: "filtered_frequency_data", withExtension: "json")
                      ?? Bundle(for: DictionaryService.self).url(forResource: "filtered_frequency_data", withExtension: "json"),
-              let data = try? Data(contentsOf: url) else {
+              // .alwaysMapped lets iOS page out the raw bytes under memory pressure
+              // instead of keeping the full file resident in the extension's dirty memory.
+              let data = try? Data(contentsOf: url, options: .alwaysMapped) else {
             return (TrieNode(), TrieNode(), [])
         }
 

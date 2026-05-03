@@ -344,7 +344,7 @@ struct HomeScreen: View {
                 .padding(.vertical, 20)
             
             HStack {
-                Text("Version 1.1")
+                Text("Version 1.2")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 

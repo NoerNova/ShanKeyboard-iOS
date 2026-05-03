@@ -20,8 +20,10 @@ class KeyboardViewController: ShanKeyboardInputViewController {
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
+        Tokenizer.shared.clearCache()
         if let provider = services.autocompleteService as? AutocompleteServiceProvider {
             provider.clearCaches()
+            provider.purgeHeavyModels()
         }
     }
 

@@ -53,6 +53,13 @@ class NGramService {
         }
     }
 
+    /// Releases the in-memory model (~15–25 MB) under severe memory pressure.
+    /// Suggestions will fall back to DictionaryService until reloaded.
+    func purge() {
+        model = nil
+        isLoaded = false
+    }
+
     private func loadModel() {
         guard
             let url = Bundle.main.url(forResource: "bigram_data", withExtension: "plist")
@@ -64,7 +71,9 @@ class NGramService {
         }
 
         do {
-            let data = try Data(contentsOf: url)
+            // .alwaysMapped lets iOS evict the raw file pages under memory pressure
+            // without terminating the extension process.
+            let data = try Data(contentsOf: url, options: .alwaysMapped)
             let raw: [String: Any]?
             if url.pathExtension == "plist" {
                 raw = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
