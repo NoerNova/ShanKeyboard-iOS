@@ -24,7 +24,7 @@ struct AboutScreen: View {
                             .font(.system(size: 28, weight: .bold, design: .default))
                             .multilineTextAlignment(.center)
                         
-                        Text("Version: 1.2")
+                        Text("Version: 1.3")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
