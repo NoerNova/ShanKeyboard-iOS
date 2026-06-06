@@ -6,17 +6,19 @@
 //
 
 class TrieNode {
-    var children: [String: TrieNode] = [:]
+    // Keyed by Unicode.Scalar rather than String: avoids a heap String allocation per
+    // edge, and there are far more edges than words. Halving this footprint is the
+    // dominant steady-state memory win for the three resident tries.
+    var children: [Unicode.Scalar: TrieNode] = [:]
     var isEndOfWord: Bool = false
     var frequency: Int = 0
-    var word: String?
 
-    /// Convert a string to an array of Unicode scalar strings for consistent trie traversal.
+    /// Convert a string to an array of Unicode scalars for consistent trie traversal.
     /// Using Unicode scalars instead of grapheme clusters ensures that incomplete Shan words
     /// (e.g. "ၵုမ") can match prefixes of complete words (e.g. "ၵုမ်"),
     /// since combining characters like ် are stored as separate trie nodes.
-    private static func scalarKeys(_ text: String) -> [String] {
-        text.unicodeScalars.map { String($0) }
+    private static func scalarKeys(_ text: String) -> [Unicode.Scalar] {
+        Array(text.unicodeScalars)
     }
 
     func insert(_ word: String, frequency: Int = 1) {
@@ -32,7 +34,6 @@ class TrieNode {
 
         current.isEndOfWord = true
         current.frequency = max(current.frequency, frequency)
-        current.word = word
     }
 
     func searchPrefix(_ prefix: String) -> TrieNode? {
@@ -73,11 +74,10 @@ class TrieNode {
         return removeHelper(characters, index: 0)
     }
 
-    private func removeHelper(_ chars: [String], index: Int) -> Bool {
+    private func removeHelper(_ chars: [Unicode.Scalar], index: Int) -> Bool {
         if index == chars.count {
             guard isEndOfWord else { return false }
             isEndOfWord = false
-            word = nil
             frequency = 0
             return children.isEmpty
         }
@@ -90,16 +90,24 @@ class TrieNode {
         return false
     }
 
-    func getAllWords(limit: Int = 10) -> [(word: String, frequency: Int)] {
+    /// Collects words in the subtree rooted at this node.
+    /// Words are reconstructed from the traversal path rather than stored per-node
+    /// (a stored `word` String at every terminal duplicated the entire dictionary in RAM).
+    /// `prefix` is the string that located this node, so emitted words are complete.
+    func getAllWords(prefix: String = "", limit: Int = 10) -> [(word: String, frequency: Int)] {
         var collected: [(String, Int)] = []
         collected.reserveCapacity(limit * 2)
 
+        var path = Array(prefix.unicodeScalars)
+
         func dfs(_ node: TrieNode) {
-            if node.isEndOfWord, let word = node.word {
-                collected.append((word, node.frequency))
+            if node.isEndOfWord {
+                collected.append((String(String.UnicodeScalarView(path)), node.frequency))
             }
-            for (_, childNode) in node.children {
+            for (scalar, childNode) in node.children {
+                path.append(scalar)
                 dfs(childNode)
+                path.removeLast()
             }
         }
 

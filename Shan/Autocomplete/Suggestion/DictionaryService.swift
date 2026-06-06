@@ -68,22 +68,26 @@ class DictionaryService {
             return (TrieNode(), TrieNode(), [])
         }
 
-        let newTrie = TrieNode()
-        var wordsByFreq: [(String, Int)] = []
-        for entry in dictionaryData.words {
-            newTrie.insert(entry.word, frequency: entry.frequency)
-            wordsByFreq.append((entry.word, entry.frequency))
+        // autoreleasepool drains the decoded object graph promptly once the tries are
+        // built, instead of holding the decoded array + the tries together past the peak.
+        return autoreleasepool { () -> (TrieNode, TrieNode, [String]) in
+            let newTrie = TrieNode()
+            var wordsByFreq: [(String, Int)] = []
+            for entry in dictionaryData.words {
+                newTrie.insert(entry.word, frequency: entry.frequency)
+                wordsByFreq.append((entry.word, entry.frequency))
+            }
+
+            let newSyllableTrie = TrieNode()
+            for entry in dictionaryData.syllables {
+                newSyllableTrie.insert(entry.syllable, frequency: entry.frequency)
+            }
+
+            wordsByFreq.sort { $0.1 > $1.1 }
+            let newTopWords = wordsByFreq.prefix(100).map { $0.0 }
+
+            return (newTrie, newSyllableTrie, newTopWords)
         }
-
-        let newSyllableTrie = TrieNode()
-        for entry in dictionaryData.syllables {
-            newSyllableTrie.insert(entry.syllable, frequency: entry.frequency)
-        }
-
-        wordsByFreq.sort { $0.1 > $1.1 }
-        let newTopWords = wordsByFreq.prefix(100).map { $0.0 }
-
-        return (newTrie, newSyllableTrie, newTopWords)
     }
 
     // MARK: - Prefix Validation
@@ -150,7 +154,7 @@ class DictionaryService {
             return []
         }
 
-        let results = prefixNode.getAllWords(limit: limit).map {
+        let results = prefixNode.getAllWords(prefix: prefix, limit: limit).map {
             DictionaryMatch(word: $0.word, frequency: $0.frequency, type: .dictionary)
         }
 
@@ -163,7 +167,7 @@ class DictionaryService {
             return []
         }
 
-        return prefixNode.getAllWords(limit: limit).map {
+        return prefixNode.getAllWords(prefix: prefix, limit: limit).map {
             DictionaryMatch(word: $0.word, frequency: $0.frequency, type: .syllable)
         }
     }
@@ -206,8 +210,8 @@ struct DictionaryData: Codable {
 struct WordEntry: Codable {
     let word: String
     let frequency: Int
-    let category: String?
-    let meaning: String?
+    // `category`/`meaning` exist in the source data but are unused when building the trie.
+    // Omitting them here means the decoder skips those keys, cutting the decode-peak memory.
 }
 
 struct SyllableEntry: Codable {

@@ -16,11 +16,12 @@ private struct NGramModel {
 
     // Bigram stored as CSR (Compressed Sparse Row)
     // bigramOffsets[i] ..< bigramOffsets[i+1] → indices into bigramFollowers for context word i
-    let bigramOffsets: [Int]
-    let bigramFollowers: [(idx: Int, count: UInt16)]
+    // Int32 (not Int) halves the resident size of these large arrays.
+    let bigramOffsets: [Int32]
+    let bigramFollowers: [(idx: Int32, count: UInt16)]
 
     // Trigram: sparse dict key = Int64(ctx1) << 32 | Int64(ctx2)
-    let trigramTable: [Int64: [(idx: Int, count: UInt16)]]
+    let trigramTable: [Int64: [(idx: Int32, count: UInt16)]]
 
     var vocabSize: Int { vocab.count }
 }
@@ -40,10 +41,22 @@ class NGramService {
     private(set) var isLoaded = false
     private var model: NGramModel?
 
+    /// Devices with < 5 GB RAM (iPhone 13/14 class) crash under the NGram model's
+    /// load peak + resident footprint. On those devices we skip it entirely and let
+    /// suggestions fall back to the dictionary + personal bigram chain.
+    private let lowRAM = ProcessInfo.processInfo.physicalMemory < 5_368_709_120
+
     // MARK: - Async Loading
 
     /// Loads the model from bundle on a background queue.
     func loadAsync(completion: (() -> Void)? = nil) {
+        guard !lowRAM else {
+            // Skip loading: `model` stays nil (scoredCandidates returns []), but report
+            // loaded so the caller's chain doesn't wait on a model that never arrives.
+            isLoaded = true
+            completion?()
+            return
+        }
         DispatchQueue.global(qos: .utility).async { [weak self] in
             self?.loadModel()
             DispatchQueue.main.async {
@@ -71,17 +84,23 @@ class NGramService {
         }
 
         do {
-            // .alwaysMapped lets iOS evict the raw file pages under memory pressure
-            // without terminating the extension process.
-            let data = try Data(contentsOf: url, options: .alwaysMapped)
-            let raw: [String: Any]?
-            if url.pathExtension == "plist" {
-                raw = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
-            } else {
-                raw = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            // autoreleasepool releases the boxed Foundation object graph from
+            // PropertyListSerialization/JSONSerialization as soon as the compact CSR
+            // model is built, instead of letting it linger to the next main-loop drain.
+            // This is the largest transient peak during extension startup.
+            model = try autoreleasepool { () -> NGramModel? in
+                // .alwaysMapped lets iOS evict the raw file pages under memory pressure
+                // without terminating the extension process.
+                let data = try Data(contentsOf: url, options: .alwaysMapped)
+                let raw: [String: Any]?
+                if url.pathExtension == "plist" {
+                    raw = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+                } else {
+                    raw = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+                }
+                guard let raw else { return nil }
+                return try parseModel(raw)
             }
-            guard let raw else { return }
-            model = try parseModel(raw)
         } catch {
             // Model unavailable — fallback to legacy path remains active
         }
@@ -113,7 +132,7 @@ class NGramService {
         let n = vocabArray.count
 
         // Build CSR bigram table
-        var bigramOffsets = [Int](repeating: 0, count: n + 1)
+        var bigramOffsets = [Int32](repeating: 0, count: n + 1)
         // First pass: count followers per context
         for entry in bigramsRaw {
             guard entry.count >= 3 else { continue }
@@ -123,7 +142,7 @@ class NGramService {
         // Prefix sum
         for i in 1...n { bigramOffsets[i] += bigramOffsets[i - 1] }
 
-        var bigramFollowers = [(idx: Int, count: UInt16)](
+        var bigramFollowers = [(idx: Int32, count: UInt16)](
             repeating: (idx: 0, count: 0),
             count: bigramsRaw.count
         )
@@ -134,13 +153,13 @@ class NGramService {
             let fol = entry[1].intValue
             let cnt = min(entry[2].intValue, Int(UInt16.max))
             if ctx < n {
-                bigramFollowers[insertPos[ctx]] = (idx: fol, count: UInt16(cnt))
+                bigramFollowers[Int(insertPos[ctx])] = (idx: Int32(fol), count: UInt16(cnt))
                 insertPos[ctx] += 1
             }
         }
 
         // Build sparse trigram dict
-        var trigramTable = [Int64: [(idx: Int, count: UInt16)]]()
+        var trigramTable = [Int64: [(idx: Int32, count: UInt16)]]()
         trigramTable.reserveCapacity(trigramsRaw.count / 5)
         for entry in trigramsRaw {
             guard entry.count >= 4 else { continue }
@@ -149,7 +168,7 @@ class NGramService {
             let fol  = entry[2].intValue
             let cnt  = min(entry[3].intValue, Int(UInt16.max))
             let key  = (ctx1 << 32) | ctx2
-            trigramTable[key, default: []].append((idx: fol, count: UInt16(cnt)))
+            trigramTable[key, default: []].append((idx: Int32(fol), count: UInt16(cnt)))
         }
 
         return NGramModel(
@@ -217,7 +236,7 @@ class NGramService {
                 let key = Int64(c1) << 32 | Int64(c2)
                 if let followers = model.trigramTable[key] {
                     let total = Float(followers.reduce(0) { $0 + Int($1.count) })
-                    if let entry = followers.first(where: { $0.idx == idx }) {
+                    if let entry = followers.first(where: { Int($0.idx) == idx }) {
                         triScore = Float(entry.count) / total
                     }
                 } else {
@@ -235,12 +254,12 @@ class NGramService {
             // Bigram score
             var biScore: Float = 0
             if let c2 = ctx2Idx {
-                let start = model.bigramOffsets[c2]
-                let end   = model.bigramOffsets[c2 + 1]
+                let start = Int(model.bigramOffsets[c2])
+                let end   = Int(model.bigramOffsets[c2 + 1])
                 if start < end {
                     let slice = model.bigramFollowers[start..<end]
                     let total = Float(slice.reduce(0) { $0 + Int($1.count) })
-                    if let entry = slice.first(where: { $0.idx == idx }) {
+                    if let entry = slice.first(where: { Int($0.idx) == idx }) {
                         biScore = Float(entry.count) / total
                     }
                 } else {
@@ -297,14 +316,14 @@ class NGramService {
         var idxSet = Set<Int>()
 
         if let c2 = ctx2 {
-            let start = model.bigramOffsets[c2]
-            let end   = model.bigramOffsets[c2 + 1]
-            for entry in model.bigramFollowers[start..<end] { idxSet.insert(entry.idx) }
+            let start = Int(model.bigramOffsets[c2])
+            let end   = Int(model.bigramOffsets[c2 + 1])
+            for entry in model.bigramFollowers[start..<end] { idxSet.insert(Int(entry.idx)) }
 
             if let c1 = ctx1 {
                 let key = Int64(c1) << 32 | Int64(c2)
                 if let followers = model.trigramTable[key] {
-                    for entry in followers { idxSet.insert(entry.idx) }
+                    for entry in followers { idxSet.insert(Int(entry.idx)) }
                 }
             }
         }
