@@ -160,7 +160,7 @@ class AutocompleteDataManager {
     /// Search learned words by prefix using trie (O(prefix length + results))
     func searchLearnedWords(prefix: String, limit: Int = 5) -> [(word: String, frequency: Int)] {
         guard let node = learnedWordsTrie.searchPrefix(prefix) else { return [] }
-        return node.getAllWords(limit: limit)
+        return node.getAllWords(prefix: prefix, limit: limit)
     }
 
     // MARK: - Private Helper Methods

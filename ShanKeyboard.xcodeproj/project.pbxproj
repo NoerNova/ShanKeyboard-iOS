@@ -98,6 +98,8 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				Autocomplete/Resource/bigram_data.json,
+				Autocomplete/Resource/filtered_frequency_data.json,
 			);
 			target = DD7E30182C99FA5B00922A79 /* Shan */;
 		};
@@ -647,7 +649,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ShanKeyboard/ShanKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1.2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ShanKeyboard/Preview Content\"";
 				DEVELOPMENT_TEAM = 7YT4A3YW62;
@@ -693,7 +695,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = ShanKeyboard/ShanKeyboard.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 1.2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"ShanKeyboard/Preview Content\"";
 				DEVELOPMENT_TEAM = 7YT4A3YW62;

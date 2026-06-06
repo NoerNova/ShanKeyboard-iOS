@@ -27,6 +27,18 @@ class KeyboardViewController: ShanKeyboardInputViewController {
         }
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        // Release the cheap-to-rebuild caches when the keyboard is dismissed so memory
+        // doesn't accumulate across host-app switches. The heavy NGram model is left
+        // alone here (re-parsing it on every appearance would reintroduce the load peak);
+        // it is purged only under an actual memory warning.
+        Tokenizer.shared.clearCache()
+        if let provider = services.autocompleteService as? AutocompleteServiceProvider {
+            provider.clearCaches()
+        }
+    }
+
     override func viewWillSetupKeyboardView() {
         super.viewWillSetupKeyboardView()
         

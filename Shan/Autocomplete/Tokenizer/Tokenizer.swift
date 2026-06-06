@@ -32,16 +32,21 @@ public class Tokenizer {
         }
 
         do {
-            let content = try String(contentsOfFile: path, encoding: .utf8)
-            let words = content.components(separatedBy: .newlines)
-                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                .filter { !$0.isEmpty }
+            // autoreleasepool drains the parsed file string + word array as soon as the
+            // trie is built, so they don't stay resident alongside the finished trie.
+            let (newTrie, newMaxLength): (TrieNode, Int) = try autoreleasepool {
+                let content = try String(contentsOfFile: path, encoding: .utf8)
+                let words = content.components(separatedBy: .newlines)
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
 
-            let newTrie = TrieNode()
-            var newMaxLength = 0
-            for word in words {
-                newTrie.insert(word, frequency: 1)
-                newMaxLength = max(newMaxLength, word.count)
+                let trie = TrieNode()
+                var maxLength = 0
+                for word in words {
+                    trie.insert(word, frequency: 1)
+                    maxLength = max(maxLength, word.count)
+                }
+                return (trie, maxLength)
             }
             // Swap onto main thread to avoid data races with tokenize() callers.
             DispatchQueue.main.async { [weak self] in
@@ -162,7 +167,7 @@ extension Tokenizer {
 
     public func findWordsStartingWith(_ prefix: String, limit: Int = 10) -> [String] {
         guard !prefix.isEmpty, let node = dictionaryTrie.searchPrefix(prefix) else { return [] }
-        return node.getAllWords(limit: limit).map { $0.word }
+        return node.getAllWords(prefix: prefix, limit: limit).map { $0.word }
     }
 }
 
