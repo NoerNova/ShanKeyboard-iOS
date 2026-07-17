@@ -9,9 +9,14 @@ import Foundation
 
 public class Tokenizer {
 
-    private var dictionaryTrie = TrieNode()
-    private var maxWordLength: Int = 0
-    private var isLoaded = false
+    // The tokenizer shares DictionaryService's trie — it holds the exact same
+    // 28,863 words the old dictionary.txt load produced, so building a second
+    // 140k-node trie here only duplicated ~12–20 MB of resident memory.
+    // DictionaryService swaps its trie on the main thread and tokenize() callers
+    // run on main, so the thread model is unchanged.
+    private var dictionaryTrie: TrieNode { SharedResources.shared.dictionaryService.trie }
+    private var maxWordLength: Int { SharedResources.shared.dictionaryService.maxWordLength }
+    private var isLoaded: Bool { SharedResources.shared.dictionaryService.isLoaded }
 
     // LRU cache using NSCache (auto-evicts under memory pressure)
     private var tokenizationCache = NSCache<NSString, TokenizationCacheEntry>()
@@ -19,46 +24,6 @@ public class Tokenizer {
     init() {
         let lowRAM = ProcessInfo.processInfo.physicalMemory < 5_368_709_120
         tokenizationCache.countLimit = lowRAM ? 50 : 200
-        // Load on a background queue so init() does not block the main thread.
-        // tokenize() returns [] until loading completes, which is safe for all callers.
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            self?.loadDictionary()
-        }
-    }
-
-    private func loadDictionary() {
-        guard let path = Bundle.main.path(forResource: "dictionary", ofType: "txt") else {
-            return
-        }
-
-        do {
-            // autoreleasepool drains the parsed file string + word array as soon as the
-            // trie is built, so they don't stay resident alongside the finished trie.
-            let (newTrie, newMaxLength): (TrieNode, Int) = try autoreleasepool {
-                let content = try String(contentsOfFile: path, encoding: .utf8)
-                let words = content.components(separatedBy: .newlines)
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .filter { !$0.isEmpty }
-
-                let trie = TrieNode()
-                var maxLength = 0
-                for word in words {
-                    trie.insert(word, frequency: 1)
-                    maxLength = max(maxLength, word.count)
-                }
-                return (trie, maxLength)
-            }
-            // Swap onto main thread to avoid data races with tokenize() callers.
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                self.dictionaryTrie = newTrie
-                self.maxWordLength = newMaxLength
-                self.isLoaded = true
-            }
-        } catch {
-            // Silently fail — dictionary loading errors are non-recoverable
-            // and logging in a keyboard extension is a privacy concern
-        }
     }
 
     // MARK: - Public API
@@ -80,6 +45,8 @@ public class Tokenizer {
     /// Finds the segmentation that minimizes the total number of tokens
     /// (preferring longer dictionary words over single-character fallbacks).
     private func maximalMatching(_ text: String) -> [String] {
+        let trie = dictionaryTrie
+        let maxWordLength = self.maxWordLength
         let chars = Array(text)
         let n = chars.count
 
@@ -106,7 +73,7 @@ public class Tokenizer {
                 let start = i - len
                 guard cost[start] != Int.max else { continue }
                 let substring = String(chars[start..<i])
-                if dictionaryTrie.contains(substring) {
+                if trie.contains(substring) {
                     let newCost = cost[start] + 1
                     if newCost < cost[i] || (newCost == cost[i] && len > (i - parent[i])) {
                         cost[i] = newCost

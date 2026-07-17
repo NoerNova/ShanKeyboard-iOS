@@ -59,6 +59,9 @@ class AutocompleteServiceProvider: AutocompleteService {
         // DictionaryService first; NGramService starts only after it completes.
         SharedResources.shared.dictionaryService.loadAsync { [weak self] in
             guard let self else { return }
+            // The tokenizer (backed by this dictionary) is only now usable, so the
+            // user's bigram chain — built empty during loadAllData() — can be rebuilt.
+            self.dataManager.rebuildBigramChain()
             self.suggestionCache.removeAllObjects()
             self.onModelLoaded?()
             self.ngramService.loadAsync { [weak self] in
@@ -152,8 +155,7 @@ class AutocompleteServiceProvider: AutocompleteService {
         let ngramCandidates     = contextualService.getSuggestions(for: text)
         let dictionaryCandidates = dictionaryService.getDictionarySuggestions(for: text)
 
-        // Fallbacks used only to fill remaining gaps
-        let syllableCandidates  = dictionaryService.getSyllableSuggestions(for: text)
+        // Fallback used only to fill remaining gaps
         let spellCandidates: [Autocomplete.Suggestion] = (!text.isEmpty
             && !dictionaryService.isValidWord(text)
             && !dictionaryService.couldBeValidWordPrefix(text))
@@ -170,18 +172,28 @@ class AutocompleteServiceProvider: AutocompleteService {
             }
         }
 
+        func fill(from candidates: [Autocomplete.Suggestion]) {
+            for s in candidates {
+                guard ordered.count < maxSuggestions else { return }
+                if !seen.contains(s.text) {
+                    ordered.append(s)
+                    seen.insert(s.text)
+                }
+            }
+        }
+
         pickFirst(from: personalCandidates)   // slot 1
         pickFirst(from: ngramCandidates)       // slot 2
         pickFirst(from: dictionaryCandidates)  // slot 3
 
-        // Fill any remaining slots with fallbacks
-        for s in (ngramCandidates + dictionaryCandidates + syllableCandidates + spellCandidates) {
-            guard ordered.count < maxSuggestions else { break }
-            if !seen.contains(s.text) {
-                ordered.append(s)
-                seen.insert(s.text)
-            }
+        // Fill any remaining slots with fallbacks. Syllable suggestions are only
+        // computed when actually needed — previously they ran a syllable-trie
+        // search on every keystroke just to be discarded when slots were full.
+        fill(from: ngramCandidates + dictionaryCandidates)
+        if ordered.count < maxSuggestions {
+            fill(from: dictionaryService.getSyllableSuggestions(for: text))
         }
+        fill(from: spellCandidates)
 
         return deduplicateSuggestions(ordered, inputText: text)
     }
@@ -306,7 +318,10 @@ extension AutocompleteServiceProvider {
             contextToTokenize = documentContext
         }
 
-        let tokens  = Tokenizer.shared.tokenize(contextToTokenize).filter { !$0.isEmpty }
+        // Only the last 2 tokens are kept, so tokenize just the tail (100-char cap).
+        // Tokenizing the whole document here grew unboundedly with the text and
+        // missed the tokenization cache on every keystroke.
+        let tokens  = Tokenizer.shared.tokenizeLastPart(contextToTokenize).filter { !$0.isEmpty }
         let lastTwo = Array(tokens.suffix(2))
 
         guard lastTwo != dataManager.contextWindow else { return }

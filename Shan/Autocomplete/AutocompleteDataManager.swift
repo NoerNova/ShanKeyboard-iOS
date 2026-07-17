@@ -66,6 +66,13 @@ class AutocompleteDataManager {
         buildBigramChain()
     }
 
+    /// Re-derives the word bigram chain from learned words. Must run again after the
+    /// tokenizer's backing dictionary loads — at loadAllData() time the tokenizer
+    /// returns [] for everything, so the chain built there is always empty.
+    func rebuildBigramChain() {
+        buildBigramChain()
+    }
+
     // Backward-compatible accessors
     var ignoredWords: [String] { Array(ignoredWordsSet) }
     var learnedWords: [String] { learnedWordsList }

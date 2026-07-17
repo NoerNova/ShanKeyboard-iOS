@@ -83,7 +83,7 @@ class SpellCorrectionService {
             var modified = chars
             modified.remove(at: i)
             let candidate = modified.joined()
-            if dictionaryService.isValidWord(candidate) {
+            if dictionaryService.isValidWordUncached(candidate) {
                 candidates.insert(candidate)
             }
         }
@@ -93,7 +93,7 @@ class SpellCorrectionService {
             var modified = chars
             modified.swapAt(i, i + 1)
             let candidate = modified.joined()
-            if dictionaryService.isValidWord(candidate) {
+            if dictionaryService.isValidWordUncached(candidate) {
                 candidates.insert(candidate)
             }
         }
@@ -128,7 +128,7 @@ class SpellCorrectionService {
                 var modified = chars
                 modified[i] = replacement
                 let candidate = modified.joined()
-                if dictionaryService.isValidWord(candidate) {
+                if dictionaryService.isValidWordUncached(candidate) {
                     candidates.insert(candidate)
                 }
             }
@@ -140,7 +140,7 @@ class SpellCorrectionService {
                 var modified = chars
                 modified.insert(char, at: i)
                 let candidate = modified.joined()
-                if dictionaryService.isValidWord(candidate) {
+                if dictionaryService.isValidWordUncached(candidate) {
                     candidates.insert(candidate)
                 }
             }

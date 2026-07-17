@@ -11,6 +11,8 @@ import KeyboardKit
 class DictionaryService {
     private(set) var trie = TrieNode()
     private(set) var syllableTrie = TrieNode()
+    /// Longest word length in graphemes — used by Tokenizer's maximal matching.
+    private(set) var maxWordLength = 0
     private(set) var isLoaded = false
     private var searchCache = NSCache<NSString, NSArray>()
     private var validWordCache = NSCache<NSString, NSNumber>()
@@ -33,11 +35,12 @@ class DictionaryService {
     func loadAsync(completion: (() -> Void)? = nil) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
-            let (newTrie, newSyllableTrie, newTopWords) = self.buildDictionaryData()
+            let (newTrie, newSyllableTrie, newTopWords, newMaxWordLength) = self.buildDictionaryData()
             DispatchQueue.main.async {
                 self.trie = newTrie
                 self.syllableTrie = newSyllableTrie
                 self.topWords = newTopWords
+                self.maxWordLength = newMaxWordLength
                 self.isLoaded = true
                 completion?()
             }
@@ -46,7 +49,7 @@ class DictionaryService {
 
     // MARK: - Dictionary Loading
 
-    private func buildDictionaryData() -> (TrieNode, TrieNode, [String]) {
+    private func buildDictionaryData() -> (TrieNode, TrieNode, [String], Int) {
         guard let url = Bundle.main.url(forResource: "filtered_frequency_data", withExtension: "plist")
                      ?? Bundle(for: DictionaryService.self).url(forResource: "filtered_frequency_data", withExtension: "plist")
                      ?? Bundle.main.url(forResource: "filtered_frequency_data", withExtension: "json")
@@ -54,7 +57,7 @@ class DictionaryService {
               // .alwaysMapped lets iOS page out the raw bytes under memory pressure
               // instead of keeping the full file resident in the extension's dirty memory.
               let data = try? Data(contentsOf: url, options: .alwaysMapped) else {
-            return (TrieNode(), TrieNode(), [])
+            return (TrieNode(), TrieNode(), [], 0)
         }
 
         let dictionaryData: DictionaryData?
@@ -65,17 +68,19 @@ class DictionaryService {
         }
 
         guard let dictionaryData else {
-            return (TrieNode(), TrieNode(), [])
+            return (TrieNode(), TrieNode(), [], 0)
         }
 
         // autoreleasepool drains the decoded object graph promptly once the tries are
         // built, instead of holding the decoded array + the tries together past the peak.
-        return autoreleasepool { () -> (TrieNode, TrieNode, [String]) in
+        return autoreleasepool { () -> (TrieNode, TrieNode, [String], Int) in
             let newTrie = TrieNode()
             var wordsByFreq: [(String, Int)] = []
+            var newMaxWordLength = 0
             for entry in dictionaryData.words {
                 newTrie.insert(entry.word, frequency: entry.frequency)
                 wordsByFreq.append((entry.word, entry.frequency))
+                newMaxWordLength = max(newMaxWordLength, entry.word.count)
             }
 
             let newSyllableTrie = TrieNode()
@@ -86,7 +91,7 @@ class DictionaryService {
             wordsByFreq.sort { $0.1 > $1.1 }
             let newTopWords = wordsByFreq.prefix(100).map { $0.0 }
 
-            return (newTrie, newSyllableTrie, newTopWords)
+            return (newTrie, newSyllableTrie, newTopWords, newMaxWordLength)
         }
     }
 
@@ -185,6 +190,13 @@ class DictionaryService {
         let result = trie.contains(text) || syllableTrie.contains(text)
         validWordCache.setObject(NSNumber(value: result), forKey: key)
         return result
+    }
+
+    /// Uncached lookup for bulk probes (spell-correction generates ~350 mostly-novel
+    /// candidates per call, which would evict every hot entry from validWordCache).
+    func isValidWordUncached(_ text: String) -> Bool {
+        guard !text.isEmpty else { return false }
+        return trie.contains(text) || syllableTrie.contains(text)
     }
 
     /// Store bigram from user data for next-word prediction

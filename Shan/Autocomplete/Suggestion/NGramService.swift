@@ -51,9 +51,10 @@ class NGramService {
     /// Loads the model from bundle on a background queue.
     func loadAsync(completion: (() -> Void)? = nil) {
         guard !lowRAM else {
-            // Skip loading: `model` stays nil (scoredCandidates returns []), but report
-            // loaded so the caller's chain doesn't wait on a model that never arrives.
-            isLoaded = true
+            // Skip loading: `model` stays nil and `isLoaded` stays false, so
+            // ContextualSuggestionService falls through to its legacy personal-bigram
+            // path (setting isLoaded=true here used to mask that fallback entirely,
+            // leaving old devices with no contextual prediction at all).
             completion?()
             return
         }

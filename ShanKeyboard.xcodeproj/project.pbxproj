@@ -98,6 +98,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Autocomplete/Resource/bigram_data.json,
+				Autocomplete/Resource/dictionary.txt,
 				Autocomplete/Resource/filtered_frequency_data.json,
 				Info.plist,
 			);
