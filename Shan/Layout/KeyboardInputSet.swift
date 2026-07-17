@@ -39,7 +39,7 @@ public extension KeyboardLayout.InputSet {
     static var shanSIL: KeyboardLayout.InputSet {
         .init(rows: [
             .init(lowercased: ["ၸ", "တ", "ၼ", "မ", "ဢ", "ပ", "ၵ", "င", "ဝ", "ႁ"], uppercased: ["ꩡ", "ၻ", "ꧣ", "႞", "ြ", "ၿ", "ၷ", "ရ", "သ", "ႀ"]),
-            .init(lowercased: ["ေ", "ႄ", "ိ", "်", "ွ", "ႉ", "ႇ", "ု", "ူ", "ႈ"], uppercased: ["ဵ", "ႅ", "ီ", "ႂ်", "ႂ", "့", "ႆ", "\"", "ႊ", "း"]),
+            .init(lowercased: ["ေ", "ႄ", "ိ", "်", "ွ", "ႉ", "ႇ", "ု", "ူ", "ႈ"], uppercased: ["ဵ", "ႅ", "ီ", "ႂ်", "ႂ", "့", "ႆ", "ံ", "ႊ", "း"]),
             .init(lowercased: ["ၽ", "ထ", "ၶ", "လ", "ယ", "ၺ", "ၢ", "။"], uppercased: ["ၾ", "ꩪ", "ꧠ", "ꩮ", "ျ", "႟", "ႃ", "၊"], deviceVariations: [.pad: (lowercased: ["ၽ", "ထ", "ၶ", "လ", "ယ", "ၺ", "ၢ", ","], uppercased: ["ၾ", "ꩪ", "ꧠ", "ꩮ", "ျ", "႟", "ႃ", "?"])]),
         ])
     }
