@@ -183,7 +183,25 @@ class AutocompleteServiceProvider: AutocompleteService {
             }
         }
 
-        return deduplicateSuggestions(ordered, inputText: text)
+        let deduplicated = deduplicateSuggestions(ordered, inputText: text)
+        return applyNativeBarLayout(to: deduplicated, inputText: text, maxSuggestions: maxSuggestions)
+    }
+
+    /// Mimics the native iOS bar: [ "literal" | highlighted best candidate | next best ].
+    /// The autocorrect tag is display-only — ActionHandlerProvider never auto-applies it.
+    private func applyNativeBarLayout(to suggestions: [Autocomplete.Suggestion], inputText: String, maxSuggestions: Int) -> [Autocomplete.Suggestion] {
+        guard !inputText.isEmpty, let best = suggestions.first, best.text != inputText else {
+            return suggestions
+        }
+
+        // ponytail: best-ranked candidate gets the highlight; add a frequency/edit-distance
+        // confidence gate if the highlight is too often wrong.
+        var result: [Autocomplete.Suggestion] = [
+            Autocomplete.Suggestion(text: inputText, type: .unknown),
+            Autocomplete.Suggestion(text: best.text, type: .autocorrect, source: best.source),
+        ]
+        result.append(contentsOf: suggestions.dropFirst())
+        return Array(result.prefix(maxSuggestions))
     }
 
     private func deduplicateSuggestions(_ suggestions: [Autocomplete.Suggestion], inputText: String) -> [Autocomplete.Suggestion] {

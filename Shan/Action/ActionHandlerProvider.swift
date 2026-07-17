@@ -24,7 +24,13 @@ class ActionHandlerProvider: KeyboardAction.StandardActionHandler {
 
         // Get current input text to provide context for the suggestion
         let currentInput = keyboardContext.textDocumentProxy.customCurrentWord ?? ""
-        keyboardContext.customInsertAutocompleteSuggestion(suggestion, inputText: currentInput)
+
+        // Tapping the quoted literal (.unknown, only created for the raw input)
+        // keeps the typed text as-is like native iOS; the word is still learned
+        // via tryAutolearnSuggestion above.
+        if suggestion.type != .unknown {
+            keyboardContext.customInsertAutocompleteSuggestion(suggestion, inputText: currentInput)
+        }
         handle(.release, on: .character(""))
     }
 
@@ -47,17 +53,9 @@ class ActionHandlerProvider: KeyboardAction.StandardActionHandler {
         before gesture: Keyboard.Gesture,
         on action: KeyboardAction
     ) {
-        guard shouldApplyAutocorrectSuggestion(before: gesture, on: action) else { return }
-        let suggestions = autocompleteContext.suggestions
-        let autocorrect = suggestions.first { $0.isAutocorrect }
-        guard let suggestion = autocorrect else { return }
-        
-        let currentInput = keyboardContext.textDocumentProxy.customCurrentWord ?? ""
-        keyboardContext.customInsertAutocompleteSuggestion(
-            suggestion,
-            inputText: currentInput,
-            tryInsertSpace: false
-        )
+        // Highlight-only autocorrect by design: the .autocorrect tag drives the
+        // toolbar highlight, but space/punctuation never auto-replaces the word.
+        // The user must tap the suggestion.
     }
 }
 
