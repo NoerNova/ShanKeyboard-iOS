@@ -25,12 +25,9 @@ class ActionHandlerProvider: KeyboardAction.StandardActionHandler {
         // Get current input text to provide context for the suggestion
         let currentInput = keyboardContext.textDocumentProxy.customCurrentWord ?? ""
 
-        // Tapping the quoted literal (.unknown, only created for the raw input)
-        // keeps the typed text as-is like native iOS; the word is still learned
-        // via tryAutolearnSuggestion above.
-        if suggestion.type != .unknown {
-            keyboardContext.customInsertAutocompleteSuggestion(suggestion, inputText: currentInput)
-        }
+        // .unknown suggestions also come from
+        // ContextualSuggestionService and CharacterPredictionService
+        keyboardContext.customInsertAutocompleteSuggestion(suggestion, inputText: currentInput)
         handle(.release, on: .character(""))
     }
 

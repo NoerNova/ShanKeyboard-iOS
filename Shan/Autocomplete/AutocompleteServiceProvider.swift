@@ -201,17 +201,26 @@ class AutocompleteServiceProvider: AutocompleteService {
 
     /// Mimics the native iOS bar: [ "literal" | highlighted best candidate | next best ].
     /// The autocorrect tag is display-only — ActionHandlerProvider never auto-applies it.
+    /// The literal shows only the word being typed, not the raw pre-cursor text —
+    /// Shan has no spaces between words, so the raw text is usually the whole line.
     private func applyNativeBarLayout(to suggestions: [Autocomplete.Suggestion], inputText: String, maxSuggestions: Int) -> [Autocomplete.Suggestion] {
         guard !inputText.isEmpty, let best = suggestions.first, best.text != inputText else {
             return suggestions
         }
 
-        // ponytail: best-ranked candidate gets the highlight; add a frequency/edit-distance
+        // Same extraction pattern as DictionaryService: getCurrentWord first, the
+        // Tokenizer only as fallback (it mis-splits incomplete trailing words).
+        let currentWord = SharedResources.shared.shanLanguageService.getCurrentWord(from: inputText)
+        let literal = !currentWord.isEmpty
+            ? currentWord
+            : (Tokenizer.shared.getLastToken(from: inputText) ?? "")
+
         // confidence gate if the highlight is too often wrong.
-        var result: [Autocomplete.Suggestion] = [
-            Autocomplete.Suggestion(text: inputText, type: .unknown),
-            Autocomplete.Suggestion(text: best.text, type: .autocorrect, source: best.source),
-        ]
+        var result: [Autocomplete.Suggestion] = []
+        if !literal.isEmpty, literal != best.text {
+            result.append(Autocomplete.Suggestion(text: literal, type: .unknown))
+        }
+        result.append(Autocomplete.Suggestion(text: best.text, type: .autocorrect, source: best.source))
         result.append(contentsOf: suggestions.dropFirst())
         return Array(result.prefix(maxSuggestions))
     }
