@@ -111,8 +111,19 @@ class DictionaryService {
         let activePrefix = !currentWord.isEmpty ? currentWord : (Tokenizer.shared.getLastToken(from: prefix) ?? prefix)
         let matches = searchWords(prefix: activePrefix, limit: limit)
         return matches.map { match in
-            Autocomplete.Suggestion(text: match.word, type: .regular)
+            Autocomplete.Suggestion(text: preferredCompletion(for: match.word, prefix: activePrefix), type: .regular)
         }
+    }
+
+    /// Shorter matched word.
+    private func preferredCompletion(for word: String, prefix: String) -> String {
+        guard let pieces = Tokenizer.shared.splitCompoundWord(word),
+              let first = pieces.first,
+              first.count > prefix.count,
+              first.hasPrefix(prefix) else {
+            return word
+        }
+        return first
     }
 
     func getSyllableSuggestions(for prefix: String, limit: Int = 5) -> [Autocomplete.Suggestion] {

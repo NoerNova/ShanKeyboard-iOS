@@ -20,10 +20,12 @@ public class Tokenizer {
 
     // LRU cache using NSCache (auto-evicts under memory pressure)
     private var tokenizationCache = NSCache<NSString, TokenizationCacheEntry>()
+    private var splitCache = NSCache<NSString, TokenizationCacheEntry>()
 
     init() {
         let lowRAM = ProcessInfo.processInfo.physicalMemory < 5_368_709_120
         tokenizationCache.countLimit = lowRAM ? 50 : 200
+        splitCache.countLimit = lowRAM ? 50 : 200
     }
 
     // MARK: - Public API
@@ -41,10 +43,30 @@ public class Tokenizer {
         return tokens
     }
 
+    /// Splits a dictionary entry into its known constituent words, e.g.
+    /// "ၵတ်းသၼ်ႇၵတ်းၼၢဝ်" -> ["ၵတ်းသၼ်ႇ", "ၵတ်းၼၢဝ်"]. Returns nil unless every
+    /// piece is itself a real dictionary word — a split that falls back to a raw
+    /// character the dictionary can't explain is rejected rather than shown.
+    public func splitCompoundWord(_ word: String) -> [String]? {
+        guard isLoaded, word.unicodeScalars.count >= 4 else { return nil }
+
+        let key = word as NSString
+        if let cached = splitCache.object(forKey: key) {
+            return cached.tokens.isEmpty ? nil : cached.tokens
+        }
+
+        let tokens = maximalMatching(word, excludeFullMatch: true)
+        let trie = dictionaryTrie
+        let isCleanSplit = tokens.count >= 2 && tokens.allSatisfy { trie.contains($0) }
+        let result = isCleanSplit ? tokens : []
+        splitCache.setObject(TokenizationCacheEntry(result), forKey: key)
+        return isCleanSplit ? tokens : nil
+    }
+
     /// Maximal matching via dynamic programming.
     /// Finds the segmentation that minimizes the total number of tokens
     /// (preferring longer dictionary words over single-character fallbacks).
-    private func maximalMatching(_ text: String) -> [String] {
+    private func maximalMatching(_ text: String, excludeFullMatch: Bool = false) -> [String] {
         let trie = dictionaryTrie
         let maxWordLength = self.maxWordLength
         let chars = Array(text)
@@ -67,7 +89,8 @@ public class Tokenizer {
             }
 
             // Option 2: try all dictionary words ending at position i
-            let maxLen = min(maxWordLength, i)
+            let upperBound = (excludeFullMatch && i == n) ? n - 1 : i
+            let maxLen = min(maxWordLength, upperBound)
             guard maxLen >= 2 else { continue }
             for len in 2...maxLen {
                 let start = i - len
