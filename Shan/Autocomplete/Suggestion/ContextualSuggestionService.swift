@@ -56,19 +56,33 @@ class ContextualSuggestionService {
         service: NGramService
     ) -> [Autocomplete.Suggestion] {
 
-        // `text` is already `currentWordPreCursorPart` — the partial word being typed.
-        // Pass it directly as the prefix filter; do NOT run it through
-        // getCurrentIncompleteWord(), which expects a full sentence.
+        // Normalise the same way DictionaryService does (getCurrentWord, not the
+        // Tokenizer, which mis-splits incomplete trailing words).
+        let partialNext = shanService.getCurrentWord(from: text)
         let context = dataManager.contextWindow  // up to 2 recent completed words
+
+        // Prefix completions still come from the dictionary slot, and are appended
+        // here as backup so compounds like မိူင်း→မိူင်းတႆး stay reachable.
+        var results: [Autocomplete.Suggestion] = []
+        if !partialNext.isEmpty, dictionaryService.isValidWord(partialNext) {
+            let nextWordContext = Array((context + [partialNext]).suffix(2))
+            results = service.scoredCandidates(
+                context: nextWordContext,
+                partialNext: "",
+                userBigramChain: dataManager.bigramChain,
+                limit: 5
+            ).map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
+        }
 
         let candidates = service.scoredCandidates(
             context: context,
-            partialNext: text,
+            partialNext: partialNext,
             userBigramChain: dataManager.bigramChain,
             limit: 10
         )
 
-        return candidates.map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
+        results.append(contentsOf: candidates.map { Autocomplete.Suggestion(text: $0.word, type: .regular) })
+        return results
     }
 
     // MARK: - Legacy fallback (user bigram chain only)
@@ -95,8 +109,10 @@ class ContextualSuggestionService {
 
     // MARK: - Fallback suggestions (unigram frequency + grammar extensions)
 
-    private func getFallbackSuggestions(for text: String, excluding: Set<String>) -> [Autocomplete.Suggestion] {
+    private func getFallbackSuggestions(for rawText: String, excluding: Set<String>) -> [Autocomplete.Suggestion] {
         var suggestions: [Autocomplete.Suggestion] = []
+
+        let text = shanService.getCurrentWord(from: rawText)
 
         // Use top-frequency words from dictionary instead of hardcoded list
         let topWords = dictionaryService.topWords

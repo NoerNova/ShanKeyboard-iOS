@@ -33,7 +33,12 @@ class ShanKeyboardInputViewController: KeyboardInputViewController {
            !AutocompleteServiceProvider.isSensitiveTextField {
             let documentContext = textDocumentProxy.documentContextBeforeInput ?? ""
             // Pass the partial word being typed so it can be stripped from context.
-            let partialWord = textDocumentProxy.currentWordPreCursorPart ?? ""
+            // NOT currentWordPreCursorPart: KeyboardKit derives it by splitting on
+            // space/punctuation, and Shan has no spaces, so it returns the whole line.
+            // Stripping that left nothing to tokenize — contextWindow stayed empty
+            // forever, collapsing every n-gram score onto its unigram term.
+            let partialWord = SharedResources.shared.shanLanguageService
+                .getCurrentWord(from: textDocumentProxy.currentWordPreCursorPart ?? "")
             provider.updateContextFromDocument(documentContext, partialWord: partialWord)
         }
     }
