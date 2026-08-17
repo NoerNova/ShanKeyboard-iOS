@@ -344,7 +344,7 @@ struct HomeScreen: View {
                 .padding(.vertical, 20)
             
             HStack {
-                Text("Version 1.3")
+                Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.secondary)
                 
