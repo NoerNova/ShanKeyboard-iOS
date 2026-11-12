@@ -15,18 +15,14 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
     /// Height stays at the 48pt default —
     /// anything lower clips the pill and the key-press callouts. KeyboardView
     /// prefers this service style over the environment.
+    /// No highlighted autocorrect pill: the native bar highlights only real
+    /// autocorrections, and suggestions here are predictions, not corrections.
+    /// (Suggestions are no longer tagged .autocorrect either, so the
+    /// autocorrectItem style only matters if that tag ever comes back.)
     override var autocompleteToolbarStyle: Autocomplete.ToolbarStyle {
         .init(
             item: .init(titleFont: .custom("Shan", size: 17)),
-            autocorrectItem: .init(
-                titleFont: .custom("Shan", size: 17),
-                backgroundColor: Color(UIColor { trait in
-                    trait.userInterfaceStyle == .dark
-                        ? UIColor.white.withAlphaComponent(0.2)
-                    : UIColor.white.withAlphaComponent(0.4)
-                }),
-                backgroundCornerRadius: 20
-            )
+            autocorrectItem: .init(titleFont: .custom("Shan", size: 17))
         )
     }
 
@@ -48,6 +44,19 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
         default:
             return KeyboardFont.system(size: buttonFontSize(for: action))
         }
+    }
+
+    /// On iOS 26 liquid glass, KeyboardKit's pressed state is only
+    /// idle.opacity(0.6), so function keys (shift, backspace, ABC/123) barely
+    /// change on tap. Mirror the classic native flash instead: white in light
+    /// mode, lighter gray in dark mode.
+    override func buttonBackgroundColor(for action: KeyboardAction, isPressed: Bool) -> Color {
+        if #available(iOS 26.0, *), isPressed, action.isSystemAction {
+            return keyboardContext.colorScheme == .dark
+                ? Color.keyboardButtonBackground(for: .dark)
+                : .white
+        }
+        return super.buttonBackgroundColor(for: action, isPressed: isPressed)
     }
 
     /// Fixed shift incorrect isPressed color
