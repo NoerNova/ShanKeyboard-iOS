@@ -33,7 +33,32 @@ class ShanLanguageService {
         let segment = text.components(separatedBy: wordBoundaryCharacters)
             .last?.trimmingCharacters(in: .whitespaces) ?? ""
         guard !segment.isEmpty else { return "" }
-        return ShanGrammarRules.extractLastIncompleteWord(from: segment)
+        let base = ShanGrammarRules.extractLastIncompleteWord(from: segment)
+
+        // The n-gram corpus is tokenized by maximal match, so a compound like
+        // မႂ်ႇသုင် is ONE token there. extractLastIncompleteWord stops at the
+        // last syllable (သုင်), which made every consumer query contexts the
+        // model cannot contain — (မႂ်ႇ, သုင်) has no followers, မႂ်ႇသုင် does.
+        // Extend to the longest buffer suffix the dictionary can still explain
+        // (a complete word, or a prefix of one, so မႂ်ႇသု mid-compound also
+        // completes to မႂ်ႇသုင်). Keep the grammar-based result when the trie
+        // knows nothing longer. Validity is not monotonic in suffix length
+        // (each length starts at a different character), so scan them all.
+        let scalars = Array(segment.unicodeScalars)
+        let cap = min(scalars.count, dictionaryService.maxWordLength * 4)
+        var best = base
+        var len = base.unicodeScalars.count + 1
+        while len <= cap {
+            let candidate = String(String.UnicodeScalarView(scalars.suffix(len)))
+            // Prefix check first: a valid word is always its own prefix, and
+            // both are allocation-free binary searches on the mapped lexicon.
+            if dictionaryService.couldBeValidWordPrefix(candidate)
+                || dictionaryService.isValidWord(candidate) {
+                best = candidate
+            }
+            len += 1
+        }
+        return best
     }
 
     // Regex-based syllable pattern inspired by ShanNLP's syllable_break.py

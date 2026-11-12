@@ -26,10 +26,10 @@ class ContextualSuggestionService {
         self.ngramService = ngramService
     }
 
-    func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+    func getSuggestions(for text: String, preferNextWord: Bool = false) -> [Autocomplete.Suggestion] {
         var suggestions: [Autocomplete.Suggestion] = []
 
-        suggestions.append(contentsOf: getContextualSuggestions(for: text))
+        suggestions.append(contentsOf: getContextualSuggestions(for: text, preferNextWord: preferNextWord))
 
         if suggestions.count < 3 {
             suggestions.append(contentsOf: getFallbackSuggestions(
@@ -43,17 +43,18 @@ class ContextualSuggestionService {
 
     // MARK: - NGram-backed contextual suggestions
 
-    private func getContextualSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+    private func getContextualSuggestions(for text: String, preferNextWord: Bool) -> [Autocomplete.Suggestion] {
         // Use NGram model if loaded
         if let ngram = ngramService, ngram.isLoaded {
-            return ngramContextualSuggestions(for: text, service: ngram)
+            return ngramContextualSuggestions(for: text, service: ngram, preferNextWord: preferNextWord)
         }
         return legacyGetContextualSuggestions(for: text)
     }
 
     private func ngramContextualSuggestions(
         for text: String,
-        service: NGramService
+        service: NGramService,
+        preferNextWord: Bool
     ) -> [Autocomplete.Suggestion] {
 
         // Normalise the same way DictionaryService does (getCurrentWord, not the
@@ -61,12 +62,21 @@ class ContextualSuggestionService {
         let partialNext = shanService.getCurrentWord(from: text)
         let context = dataManager.contextWindow  // up to 2 recent completed words
 
-        // Prefix completions still come from the dictionary slot, and are appended
-        // here as backup so compounds like မိူင်း→မိူင်းတႆး stay reachable.
-        var results: [Autocomplete.Suggestion] = []
+        // Prefix completions of what the user typed. While mid-word they want
+        // completions (မႂ် → မႂ်ႇ, မႂ်ႈ, မႂ်း); compounds cover the
+        // "typed word is complete" case too (မႂ်ႇ → မႂ်ႇသုင်, မႂ်ႇမႂ်ႇ).
+        let completions: [Autocomplete.Suggestion] = service.scoredCandidates(
+            context: context,
+            partialNext: partialNext,
+            userBigramChain: dataManager.bigramChain,
+            limit: 10
+        ).map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
+
+        // Next-word predictions when the typed word is itself complete.
+        var nextWords: [Autocomplete.Suggestion] = []
         if !partialNext.isEmpty, dictionaryService.isValidWord(partialNext) {
             let nextWordContext = Array((context + [partialNext]).suffix(2))
-            results = service.scoredCandidates(
+            nextWords = service.scoredCandidates(
                 context: nextWordContext,
                 partialNext: "",
                 userBigramChain: dataManager.bigramChain,
@@ -74,15 +84,13 @@ class ContextualSuggestionService {
             ).map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
         }
 
-        let candidates = service.scoredCandidates(
-            context: context,
-            partialNext: partialNext,
-            userBigramChain: dataManager.bigramChain,
-            limit: 10
-        )
-
-        results.append(contentsOf: candidates.map { Autocomplete.Suggestion(text: $0.word, type: .regular) })
-        return results
+        // Ordering: completions first while typing — short Shan strings are
+        // almost always valid words themselves (မ, မႂ်), so leading with
+        // next-word would show bare followers (မ → သ) that look broken without
+        // their buffer. But right after a suggestion tap the word is CONFIRMED
+        // complete, so re-completing it reads as a stale bar — lead with
+        // next-word predictions instead.
+        return preferNextWord ? nextWords + completions : completions + nextWords
     }
 
     // MARK: - Legacy fallback (user bigram chain only)

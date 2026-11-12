@@ -54,9 +54,9 @@ class AutocompleteServiceProvider: AutocompleteService {
 
         dataManager.loadAllData()
 
-        // Load sequentially to avoid a concurrent memory spike that terminates
-        // the extension on memory-constrained devices (iPhone 13/14, iOS 26+).
-        // DictionaryService first; NGramService starts only after it completes.
+        // Both models are memory-mapped (no decode peak), but load sequentially
+        // anyway: suggestions need the dictionary first, and the n-gram model is
+        // only useful once the tokenizer can build the context window.
         SharedResources.shared.dictionaryService.loadAsync { [weak self] in
             guard let self else { return }
             // The tokenizer (backed by this dictionary) is only now usable, so the
@@ -71,14 +71,12 @@ class AutocompleteServiceProvider: AutocompleteService {
         }
     }
 
+    /// Drops every rebuildable cache. The dictionary and n-gram model are not
+    /// purged: they are clean file mappings that iOS reclaims by itself under
+    /// pressure, and purging them only cost suggestions until the next launch.
     func clearCaches() {
         suggestionCache.removeAllObjects()
-    }
-
-    /// Releases the NGram model (~15–25 MB) under severe memory pressure.
-    /// Suggestions fall back to DictionaryService until the next load cycle.
-    func purgeHeavyModels() {
-        ngramService.purge()
+        dictionaryService.clearCaches()
     }
 
     // MARK: - AutocompleteService Protocol
@@ -107,6 +105,12 @@ class AutocompleteServiceProvider: AutocompleteService {
         dataManager.unlearnWord(word)
     }
 
+    /// Word most recently accepted from the bar. While the buffer tail still
+    /// equals it, the bar leads with next-word predictions instead of
+    /// re-completing the word that was just confirmed. Cleared as soon as the
+    /// current word diverges (user typed, deleted, or moved on).
+    private var lastAcceptedSuggestionText: String?
+
     func autocomplete(_ text: String) async throws -> Autocomplete.ServiceResult {
         // When text is empty but context exists, show next-word predictions.
         // When text is empty and context is empty, nothing to show.
@@ -119,12 +123,18 @@ class AutocompleteServiceProvider: AutocompleteService {
             )
         }
 
-        let cacheKey = "\(text)||\(dataManager.contextWindow.joined(separator: "|"))" as NSString
+        let currentWord = SharedResources.shared.shanLanguageService.getCurrentWord(from: text)
+        let preferNextWord = lastAcceptedSuggestionText != nil && lastAcceptedSuggestionText == currentWord
+        if !preferNextWord { lastAcceptedSuggestionText = nil }
+
+        // The flag changes the result for identical text+context, so it must be
+        // part of the cache key.
+        let cacheKey = "\(preferNextWord ? "N|" : "")\(text)||\(dataManager.contextWindow.joined(separator: "|"))" as NSString
         if let cached = suggestionCache.object(forKey: cacheKey) {
             return cached.result
         }
 
-        let suggestions = getSuggestions(for: text)
+        let suggestions = getSuggestions(for: text, preferNextWord: preferNextWord)
         let characterPredictions = characterPrediction.getNextCharacterPredictions(for: text)
 
         let result = Autocomplete.ServiceResult(
@@ -147,12 +157,12 @@ class AutocompleteServiceProvider: AutocompleteService {
     //
     // Each slot gets the best candidate from its source that hasn't already
     // been claimed by an earlier slot. Fallbacks fill any remaining gaps.
-    private func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+    private func getSuggestions(for text: String, preferNextWord: Bool = false) -> [Autocomplete.Suggestion] {
         let maxSuggestions = max(3, context.settings.suggestionsDisplayCount)
 
         // --- Gather candidates from each source ---
         let personalCandidates  = wordCompletion.getSuggestions(for: text)
-        let ngramCandidates     = contextualService.getSuggestions(for: text)
+        let ngramCandidates     = contextualService.getSuggestions(for: text, preferNextWord: preferNextWord)
         let dictionaryCandidates = dictionaryService.getDictionarySuggestions(for: text)
 
         // Fallback used only to fill remaining gaps
@@ -199,8 +209,9 @@ class AutocompleteServiceProvider: AutocompleteService {
         return applyNativeBarLayout(to: deduplicated, inputText: text, maxSuggestions: maxSuggestions)
     }
 
-    /// Mimics the native iOS bar: [ "literal" | highlighted best candidate | next best ].
-    /// The autocorrect tag is display-only — ActionHandlerProvider never auto-applies it.
+    /// Mimics the native iOS bar: [ "literal" | best candidate | next best ].
+    /// The best candidate is NOT tagged .autocorrect: the native bar highlights
+    /// only real corrections, and these are predictions — so no highlight.
     /// The literal shows only the word being typed, not the raw pre-cursor text —
     /// Shan has no spaces between words, so the raw text is usually the whole line.
     private func applyNativeBarLayout(to suggestions: [Autocomplete.Suggestion], inputText: String, maxSuggestions: Int) -> [Autocomplete.Suggestion] {
@@ -220,7 +231,7 @@ class AutocompleteServiceProvider: AutocompleteService {
         if !literal.isEmpty, literal != best.text {
             result.append(Autocomplete.Suggestion(text: literal, type: .unknown))
         }
-        result.append(Autocomplete.Suggestion(text: best.text, type: .autocorrect, source: best.source))
+        result.append(Autocomplete.Suggestion(text: best.text, type: .regular, source: best.source))
         result.append(contentsOf: suggestions.dropFirst())
         return Array(result.prefix(maxSuggestions))
     }
@@ -299,6 +310,7 @@ extension AutocompleteServiceProvider {
         guard !Self.isSensitiveTextField else { return }
         // learnWord is already called by KeyboardKit's tryAutolearnSuggestion → learn()
         dataManager.advanceContext(completedWord: suggestion.text)
+        lastAcceptedSuggestionText = suggestion.text
         suggestionCache.removeAllObjects()
     }
 

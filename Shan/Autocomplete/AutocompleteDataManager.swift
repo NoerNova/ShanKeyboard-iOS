@@ -19,8 +19,7 @@ class AutocompleteDataManager {
     // Trie for prefix-based completion of learned words
     private(set) var learnedWordsTrie = TrieNode()
 
-    // MARK: - Markov Chains
-    private(set) var syllableMarkovChain: [String: [String: Int]] = [:]
+    // MARK: - Personal bigram chain (rebuilt from learnedWordsList at load)
     private(set) var bigramChain: [String: [String: Int]] = [:]
 
     // MARK: - Context Window (last 2 completed words, newest last)
@@ -40,12 +39,13 @@ class AutocompleteDataManager {
         contextWindow.removeAll()
     }
 
-    // MARK: - Context Tracking
-    private(set) var recentSyllables: [String] = []
-
-    // MARK: - Constants
-    private let syllableChainOrder = 2
-    private let maxRecentSyllables = 10
+    // MARK: - Size limits
+    // Learned data used to grow forever: every accepted suggestion and every
+    // completed phrase was appended, then loaded, re-tokenized and indexed on
+    // each keyboard launch. These caps keep it bounded. Oldest learned words
+    // and rarest syllables are dropped first.
+    static let maxLearnedWords = 3_000
+    static let maxSyllableEntries = 4_000
 
     // MARK: - Debounced Persistence
     private var syllableSaveTimer: Timer?
@@ -62,7 +62,6 @@ class AutocompleteDataManager {
         loadUserSyllables()
         loadIgnoredWords()
         loadLearnedWords()
-        buildSyllableMarkovChain()
         buildBigramChain()
     }
 
@@ -97,6 +96,7 @@ class AutocompleteDataManager {
             learnedWordsSet.insert(word)
             learnedWordsList.append(word)
             learnedWordsTrie.insert(word, frequency: 1)
+            trimLearnedWords()
         }
 
         // Break into syllables and learn patterns
@@ -140,28 +140,13 @@ class AutocompleteDataManager {
 
     func userDidCompleteSyllable(_ syllable: String) {
         incrementSyllableFrequency(syllable)
-        updateRecentSyllables(with: syllable)
-
-        if recentSyllables.count >= syllableChainOrder {
-            let context = recentSyllables.suffix(syllableChainOrder - 1).joined()
-            syllableMarkovChain[context, default: [:]][syllable, default: 0] += 1
-        }
     }
 
     func userDidCompletePhrase(_ phrase: String) {
         learnWord(phrase)
 
         let words = parseWordsFromText(phrase)
-        for i in 0..<words.count - 1 {
-            bigramChain[words[i], default: [:]][words[i + 1], default: 0] += 1
-        }
-    }
-
-    func updateCurrentInput(with text: String) {
-        let syllables = shanLanguageService.extractSyllables(from: text)
-        for syllable in syllables {
-            updateRecentSyllables(with: syllable)
-        }
+        addBigrams(words)
     }
 
     /// Search learned words by prefix using trie (O(prefix length + results))
@@ -173,16 +158,29 @@ class AutocompleteDataManager {
     // MARK: - Private Helper Methods
     private func incrementSyllableFrequency(_ syllable: String) {
         userSyllableFrequency[syllable, default: 0] += 1
+        trimSyllableFrequency()
         debounceSaveSyllables()
     }
 
-    private func updateRecentSyllables(with syllable: String) {
-        if recentSyllables.isEmpty || syllable != recentSyllables.last {
-            recentSyllables.append(syllable)
-            if recentSyllables.count > maxRecentSyllables {
-                recentSyllables.removeFirst()
-            }
+    /// Drops the oldest learned words beyond maxLearnedWords.
+    private func trimLearnedWords() {
+        let excess = learnedWordsList.count - Self.maxLearnedWords
+        guard excess > 0 else { return }
+        for word in learnedWordsList.prefix(excess) {
+            learnedWordsSet.remove(word)
+            learnedWordsTrie.remove(word)
         }
+        learnedWordsList.removeFirst(excess)
+    }
+
+    /// Keeps the most frequent maxSyllableEntries syllables. Prunes in one batch
+    /// once the map is 10% over the cap, so the sort runs rarely.
+    private func trimSyllableFrequency() {
+        guard userSyllableFrequency.count > Self.maxSyllableEntries + Self.maxSyllableEntries / 10 else { return }
+        let keep = userSyllableFrequency
+            .sorted { $0.value > $1.value }
+            .prefix(Self.maxSyllableEntries)
+        userSyllableFrequency = Dictionary(uniqueKeysWithValues: keep.map { ($0.key, $0.value) })
     }
 
     private func parseWordsFromText(_ text: String) -> [String] {
@@ -190,21 +188,14 @@ class AutocompleteDataManager {
         return tokens.filter { !$0.isEmpty }
     }
 
-    // MARK: - Markov Chain Building
-    private func buildSyllableMarkovChain() {
-        syllableMarkovChain.removeAll()
-
-        for text in learnedWordsList {
-            let syllables = shanLanguageService.extractSyllables(from: text)
-
-            for i in 0..<syllables.count - 1 {
-                for order in 1...min(syllableChainOrder, syllables.count - i - 1) {
-                    let startIndex = max(0, i - order + 1)
-                    let context = syllables[startIndex...i].joined()
-                    let nextSyllable = syllables[i + 1]
-                    syllableMarkovChain[context, default: [:]][nextSyllable, default: 0] += 1
-                }
-            }
+    // MARK: - Bigram Chain Building
+    /// Counts each adjacent word pair. Safe for 0 or 1 words: the old
+    /// `0..<words.count - 1` loop trapped on an empty array, which happened on
+    /// every cold launch with learned words because the tokenizer returns []
+    /// until the dictionary has loaded.
+    private func addBigrams(_ words: [String]) {
+        for (current, next) in zip(words, words.dropFirst()) {
+            bigramChain[current, default: [:]][next, default: 0] += 1
         }
     }
 
@@ -213,29 +204,13 @@ class AutocompleteDataManager {
 
         for text in learnedWordsList {
             let words = parseWordsFromText(text)
-            for i in 0..<words.count - 1 {
-                bigramChain[words[i], default: [:]][words[i + 1], default: 0] += 1
-            }
+            addBigrams(words)
         }
     }
 
     private func updateMarkovChains(with text: String) {
-        // Update syllable chain
-        let syllables = shanLanguageService.extractSyllables(from: text)
-        for i in 0..<syllables.count - 1 {
-            for order in 1...min(syllableChainOrder, syllables.count - i - 1) {
-                let startIndex = max(0, i - order + 1)
-                let context = syllables[startIndex...i].joined()
-                let nextSyllable = syllables[i + 1]
-                syllableMarkovChain[context, default: [:]][nextSyllable, default: 0] += 1
-            }
-        }
-
-        // Update bigram chain
         let words = parseWordsFromText(text)
-        for i in 0..<words.count - 1 {
-            bigramChain[words[i], default: [:]][words[i + 1], default: 0] += 1
-        }
+        addBigrams(words)
     }
 
     // MARK: - Debounced Persistence
@@ -256,6 +231,7 @@ class AutocompleteDataManager {
     // MARK: - Persistence
     private func loadUserSyllables() {
         userSyllableFrequency = UserDefaults.standard.object(forKey: "UserSyllableFrequency") as? [String: Int] ?? [:]
+        trimSyllableFrequency()
         userCharacterFrequency = UserDefaults.standard.object(forKey: "UserCharacterFrequency") as? [String: Int] ?? [:]
     }
 
@@ -274,7 +250,8 @@ class AutocompleteDataManager {
     }
 
     private func loadLearnedWords() {
-        learnedWordsList = UserDefaults.standard.object(forKey: "LearnedWords") as? [String] ?? []
+        let stored = UserDefaults.standard.object(forKey: "LearnedWords") as? [String] ?? []
+        learnedWordsList = Array(stored.suffix(Self.maxLearnedWords))
         learnedWordsSet = Set(learnedWordsList)
 
         // Build trie from learned words
