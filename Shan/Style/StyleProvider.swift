@@ -28,10 +28,26 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
 
     /// Shan font in the key-press balloon (bigger than the .largeTitle default)
     /// and in the long-press alternate callouts; everything else stays standard.
+    ///
+    /// On iOS 27 KeyboardKit draws callouts as floating bubbles (see
     override var calloutStyle: Callouts.CalloutStyle? {
-        .init(
-            actionItemFont: .custom("Shan", size: 22),
-            inputItemFont: .custom("Shan", size: 32)
+        let actionItemFont = KeyboardFont.custom("Shan", size: 22)
+        let inputItemFont = KeyboardFont.custom("Shan", size: 32)
+        guard #available(iOS 27.0, *) else {
+            return .init(actionItemFont: actionItemFont, inputItemFont: inputItemFont)
+        }
+        let isDark = keyboardContext.colorScheme == .dark
+        return .init(
+            appearance: .floating,
+            actionItemFont: actionItemFont,
+            backgroundColor: isDark ? Color(white: 0.29) : .white,
+            borderColor: isDark ? .white.opacity(0.06) : .black.opacity(0.03),
+            foregroundColor: .primary,
+            inputItemFont: inputItemFont,
+            selectedBackgroundColor: isDark ? .white.opacity(0.08) : Color(white: 0.894),
+            selectedForegroundColor: .primary,
+            shadowColor: .black.opacity(isDark ? 0.25 : 0.12),
+            shadowRadius: 6
         )
     }
 
@@ -51,6 +67,13 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
     /// change on tap. Mirror the classic native flash instead: white in light
     /// mode, lighter gray in dark mode.
     override func buttonBackgroundColor(for action: KeyboardAction, isPressed: Bool) -> Color {
+        // iOS 27 lightens a pressed input key (it stays visible below the
+        // floating callout); KeyboardKit's liquid-glass default dims it.
+        if #available(iOS 27.0, *), isPressed, action.hasIOS27PressedHighlight {
+            return keyboardContext.colorScheme == .dark
+                ? Color(white: 0.41)
+                : Color(white: 0.894)
+        }
         if #available(iOS 26.0, *), isPressed, action.isSystemAction {
             return keyboardContext.colorScheme == .dark
                 ? Color.keyboardButtonBackground(for: .dark)
@@ -71,6 +94,17 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
         } else {
             // Fallback for < iOS 26
             return action.standardButtonForegroundColor(for: keyboardContext, isPressed: isPressed)
+        }
+    }
+}
+
+private extension KeyboardAction {
+
+    /// Keys that get the lighter iOS 27 pressed color.
+    var hasIOS27PressedHighlight: Bool {
+        switch self {
+        case .character, .diacritic, .space, .text: true
+        default: false
         }
     }
 }
