@@ -8,15 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		DD14F5522E79FA8500A40C54 /* ShanKeyboardShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD14F5512E79FA8500A40C54 /* ShanKeyboardShared.swift */; };
+		DD2EF9AC30A8465300176254 /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DDE0BB8C2E6002BF00EBEE7C /* ISEmojiView */; };
+		DD2EFA2E30A848A100176254 /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD2EFA2D30A848A100176254 /* KeyboardKit */; };
 		DD3E8D1C2E7C07570048CE06 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
 		DD3E8D1F2E7C078D0048CE06 /* ShanKeyboardShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; };
 		DD3E8D202E7C078D0048CE06 /* ShanKeyboardShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = DD8CE91D2E37A05E00D11AFB /* ShanKeyboardShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		DD7E30202C99FA5B00922A79 /* Shan.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = DD7E30192C99FA5B00922A79 /* Shan.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		DD8816D62E61F8B200B1C6DC /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DD8816D52E61F8B200B1C6DC /* ISEmojiView */; };
-		DD8816D92E61F8C800B1C6DC /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD8816D82E61F8C800B1C6DC /* KeyboardKit */; };
-		DDE0BB8D2E6002BF00EBEE7C /* ISEmojiView in Frameworks */ = {isa = PBXBuildFile; productRef = DDE0BB8C2E6002BF00EBEE7C /* ISEmojiView */; };
-		DDE0BB902E60049700EBEE7C /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DDE0BB8F2E60049700EBEE7C /* KeyboardKit */; };
-		DDE0BB932E61619E00EBEE7C /* KeyboardKit in Frameworks */ = {isa = PBXBuildFile; productRef = DDE0BB922E61619E00EBEE7C /* KeyboardKit */; };
 		DDFDB3162E77BDC400FBEFD1 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = DDFDB30F2E77BDC400FBEFD1 /* LICENSE.txt */; };
 /* End PBXBuildFile section */
 
@@ -97,9 +94,12 @@
 		DD1085572CA349FF00FD0107 /* Exceptions for "Shan" folder in "Shan" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				.claude/settings.local.json,
 				Autocomplete/Resource/bigram_data.json,
+				Autocomplete/Resource/bigram_data.plist,
 				Autocomplete/Resource/dictionary.txt,
 				Autocomplete/Resource/filtered_frequency_data.json,
+				Autocomplete/Resource/filtered_frequency_data.plist,
 				Info.plist,
 			);
 			target = DD7E30182C99FA5B00922A79 /* Shan */;
@@ -169,12 +169,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DDE0BB932E61619E00EBEE7C /* KeyboardKit in Frameworks */,
-				DDE0BB8D2E6002BF00EBEE7C /* ISEmojiView in Frameworks */,
+				DD2EFA2E30A848A100176254 /* KeyboardKit in Frameworks */,
+				DD2EF9AC30A8465300176254 /* ISEmojiView in Frameworks */,
 				DD3E8D1C2E7C07570048CE06 /* ShanKeyboardShared.framework in Frameworks */,
-				DDE0BB902E60049700EBEE7C /* KeyboardKit in Frameworks */,
-				DD8816D92E61F8C800B1C6DC /* KeyboardKit in Frameworks */,
-				DD8816D62E61F8B200B1C6DC /* ISEmojiView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -325,10 +322,7 @@
 			name = Shan;
 			packageProductDependencies = (
 				DDE0BB8C2E6002BF00EBEE7C /* ISEmojiView */,
-				DDE0BB8F2E60049700EBEE7C /* KeyboardKit */,
-				DDE0BB922E61619E00EBEE7C /* KeyboardKit */,
-				DD8816D52E61F8B200B1C6DC /* ISEmojiView */,
-				DD8816D82E61F8C800B1C6DC /* KeyboardKit */,
+				DD2EFA2D30A848A100176254 /* KeyboardKit */,
 			);
 			productName = Panglong;
 			productReference = DD7E30192C99FA5B00922A79 /* Shan.appex */;
@@ -394,8 +388,7 @@
 			mainGroup = DD7E2FD92C99F82100922A79;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DD8816D42E61F8B200B1C6DC /* XCRemoteSwiftPackageReference "ISEmojiView" */,
-				DD8816D72E61F8C700B1C6DC /* XCRemoteSwiftPackageReference "KeyboardKit" */,
+				DD2EFA2C30A8486200176254 /* XCRemoteSwiftPackageReference "KeyboardKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DD7E2FE32C99F82100922A79 /* Products */;
@@ -675,7 +668,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.noernova.ShanKeyboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -721,7 +714,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.noernova.ShanKeyboard;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
@@ -844,7 +837,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.noernova.ShanKeyboard.shan;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -875,7 +868,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.3;
+				MARKETING_VERSION = 2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.noernova.ShanKeyboard.shan;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -911,7 +904,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
 				PRODUCT_BUNDLE_IDENTIFIER = com.noernova.ShanKeyboard.ShanKeyboardShared;
@@ -952,7 +945,7 @@
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
 				PRODUCT_BUNDLE_IDENTIFIER = com.noernova.ShanKeyboard.ShanKeyboardShared;
@@ -1034,15 +1027,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		DD8816D42E61F8B200B1C6DC /* XCRemoteSwiftPackageReference "ISEmojiView" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/NoerNova/ISEmojiView.git";
-			requirement = {
-				branch = custom;
-				kind = branch;
-			};
-		};
-		DD8816D72E61F8C700B1C6DC /* XCRemoteSwiftPackageReference "KeyboardKit" */ = {
+		DD2EFA2C30A8486200176254 /* XCRemoteSwiftPackageReference "KeyboardKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/NoerNova/KeyboardKit.git";
 			requirement = {
@@ -1053,27 +1038,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		DD8816D52E61F8B200B1C6DC /* ISEmojiView */ = {
+		DD2EFA2D30A848A100176254 /* KeyboardKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DD8816D42E61F8B200B1C6DC /* XCRemoteSwiftPackageReference "ISEmojiView" */;
-			productName = ISEmojiView;
-		};
-		DD8816D82E61F8C800B1C6DC /* KeyboardKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = DD8816D72E61F8C700B1C6DC /* XCRemoteSwiftPackageReference "KeyboardKit" */;
+			package = DD2EFA2C30A8486200176254 /* XCRemoteSwiftPackageReference "KeyboardKit" */;
 			productName = KeyboardKit;
 		};
 		DDE0BB8C2E6002BF00EBEE7C /* ISEmojiView */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ISEmojiView;
-		};
-		DDE0BB8F2E60049700EBEE7C /* KeyboardKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = KeyboardKit;
-		};
-		DDE0BB922E61619E00EBEE7C /* KeyboardKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = KeyboardKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
