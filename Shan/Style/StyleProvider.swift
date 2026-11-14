@@ -12,13 +12,6 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
 
     let isIPad = UIDevice.current.userInterfaceIdiom == .pad
 
-    /// Height stays at the 48pt default —
-    /// anything lower clips the pill and the key-press callouts. KeyboardView
-    /// prefers this service style over the environment.
-    /// No highlighted autocorrect pill: the native bar highlights only real
-    /// autocorrections, and suggestions here are predictions, not corrections.
-    /// (Suggestions are no longer tagged .autocorrect either, so the
-    /// autocorrectItem style only matters if that tag ever comes back.)
     override var autocompleteToolbarStyle: Autocomplete.ToolbarStyle {
         .init(
             item: .init(titleFont: .custom("Shan", size: 17)),
@@ -26,10 +19,6 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
         )
     }
 
-    /// Shan font in the key-press balloon (bigger than the .largeTitle default)
-    /// and in the long-press alternate callouts; everything else stays standard.
-    ///
-    /// On iOS 27 KeyboardKit draws callouts as floating bubbles (see
     override var calloutStyle: Callouts.CalloutStyle? {
         let actionItemFont = KeyboardFont.custom("Shan", size: 22)
         let inputItemFont = KeyboardFont.custom("Shan", size: 32)
@@ -62,13 +51,16 @@ class StyleProvider: KeyboardStyle.StandardStyleService {
         }
     }
 
-    /// On iOS 26 liquid glass, KeyboardKit's pressed state is only
-    /// idle.opacity(0.6), so function keys (shift, backspace, ABC/123) barely
-    /// change on tap. Mirror the classic native flash instead: white in light
-    /// mode, lighter gray in dark mode.
     override func buttonBackgroundColor(for action: KeyboardAction, isPressed: Bool) -> Color {
-        // iOS 27 lightens a pressed input key (it stays visible below the
-        // floating callout); KeyboardKit's liquid-glass default dims it.
+        
+        if #available(iOS 26.0, *), isPressed, action == .backspace {
+            guard keyboardContext.colorScheme == .dark else {
+                return Color(red: 0.773, green: 0.773, blue: 0.788)
+            }
+            if #available(iOS 27.0, *) { return Color(white: 0.51) }
+            return Color(white: 0.49)
+        }
+        
         if #available(iOS 27.0, *), isPressed, action.hasIOS27PressedHighlight {
             return keyboardContext.colorScheme == .dark
                 ? Color(white: 0.41)
