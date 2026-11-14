@@ -9,11 +9,12 @@ import Foundation
 import KeyboardKit
 
 class DictionaryService {
-    private(set) var trie = TrieNode()
-    private(set) var syllableTrie = TrieNode()
+    /// Memory-mapped dictionary (see MappedLexicon.swift). nil until loaded.
+    private var lexicon: MappedLexicon?
+    /// Longest word length in graphemes — used by Tokenizer's maximal matching.
+    private(set) var maxWordLength = 0
     private(set) var isLoaded = false
     private var searchCache = NSCache<NSString, NSArray>()
-    private var validWordCache = NSCache<NSString, NSNumber>()
 
     // Bigram data: word -> [(nextWord, frequency)]
     private var bigramData: [String: [(word: String, frequency: Int)]] = [:]
@@ -22,79 +23,55 @@ class DictionaryService {
     private(set) var topWords: [String] = []
 
     init() {
-        // Smaller caches on low-RAM devices (< 5 GB physical memory)
+        // Smaller cache on low-RAM devices (< 5 GB physical memory)
         let lowRAM = ProcessInfo.processInfo.physicalMemory < 5_368_709_120
         searchCache.countLimit = lowRAM ? 100 : 500
-        validWordCache.countLimit = lowRAM ? 500 : 2000
+    }
+
+    func clearCaches() {
+        searchCache.removeAllObjects()
     }
 
     // MARK: - Async Loading
 
+    /// Maps lexicon.bin. Mapping is near-free; the background hop only covers
+    /// the one-time grapheme count for maxWordLength.
     func loadAsync(completion: (() -> Void)? = nil) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            guard let self else { return }
-            let (newTrie, newSyllableTrie, newTopWords) = self.buildDictionaryData()
+            let lexicon = MappedFile.resource("lexicon", "bin", for: DictionaryService.self)
+                .flatMap(MappedLexicon.init(file:))
             DispatchQueue.main.async {
-                self.trie = newTrie
-                self.syllableTrie = newSyllableTrie
-                self.topWords = newTopWords
-                self.isLoaded = true
+                guard let self else { return }
+                if let lexicon {
+                    self.lexicon = lexicon
+                    self.topWords = lexicon.topWords
+                    self.maxWordLength = lexicon.maxWordLength
+                    self.searchCache.removeAllObjects()
+                }
+                // Stays false if lexicon.bin is missing or corrupt, so the
+                // Tokenizer and suggestion paths skip dictionary work.
+                self.isLoaded = lexicon != nil
+                MemoryProbe.log("dictionary loaded=\(lexicon != nil)")
                 completion?()
             }
         }
     }
 
-    // MARK: - Dictionary Loading
+    // MARK: - Word lookups (allocation-free binary search on mapped bytes)
 
-    private func buildDictionaryData() -> (TrieNode, TrieNode, [String]) {
-        guard let url = Bundle.main.url(forResource: "filtered_frequency_data", withExtension: "plist")
-                     ?? Bundle(for: DictionaryService.self).url(forResource: "filtered_frequency_data", withExtension: "plist")
-                     ?? Bundle.main.url(forResource: "filtered_frequency_data", withExtension: "json")
-                     ?? Bundle(for: DictionaryService.self).url(forResource: "filtered_frequency_data", withExtension: "json"),
-              // .alwaysMapped lets iOS page out the raw bytes under memory pressure
-              // instead of keeping the full file resident in the extension's dirty memory.
-              let data = try? Data(contentsOf: url, options: .alwaysMapped) else {
-            return (TrieNode(), TrieNode(), [])
-        }
+    func containsWord(_ text: String) -> Bool {
+        lexicon?.containsWord(text) ?? false
+    }
 
-        let dictionaryData: DictionaryData?
-        if url.pathExtension == "plist" {
-            dictionaryData = try? PropertyListDecoder().decode(DictionaryData.self, from: data)
-        } else {
-            dictionaryData = try? JSONDecoder().decode(DictionaryData.self, from: data)
-        }
-
-        guard let dictionaryData else {
-            return (TrieNode(), TrieNode(), [])
-        }
-
-        // autoreleasepool drains the decoded object graph promptly once the tries are
-        // built, instead of holding the decoded array + the tries together past the peak.
-        return autoreleasepool { () -> (TrieNode, TrieNode, [String]) in
-            let newTrie = TrieNode()
-            var wordsByFreq: [(String, Int)] = []
-            for entry in dictionaryData.words {
-                newTrie.insert(entry.word, frequency: entry.frequency)
-                wordsByFreq.append((entry.word, entry.frequency))
-            }
-
-            let newSyllableTrie = TrieNode()
-            for entry in dictionaryData.syllables {
-                newSyllableTrie.insert(entry.syllable, frequency: entry.frequency)
-            }
-
-            wordsByFreq.sort { $0.1 > $1.1 }
-            let newTopWords = wordsByFreq.prefix(100).map { $0.0 }
-
-            return (newTrie, newSyllableTrie, newTopWords)
-        }
+    func isWordPrefix(_ prefix: String) -> Bool {
+        lexicon?.isWordPrefix(prefix) ?? false
     }
 
     // MARK: - Prefix Validation
 
-    /// Fast trie-based prefix check - replaces scanning common words
+    /// Scalar-level prefix check against the dictionary - O(log n)
     func couldBeValidWordPrefix(_ prefix: String) -> Bool {
-        return trie.hasPrefix(prefix)
+        return isWordPrefix(prefix)
     }
 
     // MARK: - Suggestions
@@ -106,8 +83,19 @@ class DictionaryService {
         let activePrefix = !currentWord.isEmpty ? currentWord : (Tokenizer.shared.getLastToken(from: prefix) ?? prefix)
         let matches = searchWords(prefix: activePrefix, limit: limit)
         return matches.map { match in
-            Autocomplete.Suggestion(text: match.word, type: .regular)
+            Autocomplete.Suggestion(text: preferredCompletion(for: match.word, prefix: activePrefix), type: .regular)
         }
+    }
+
+    /// Shorter matched word.
+    private func preferredCompletion(for word: String, prefix: String) -> String {
+        guard let pieces = Tokenizer.shared.splitCompoundWord(word),
+              let first = pieces.first,
+              first.count > prefix.count,
+              first.hasPrefix(prefix) else {
+            return word
+        }
+        return first
     }
 
     func getSyllableSuggestions(for prefix: String, limit: Int = 5) -> [Autocomplete.Suggestion] {
@@ -150,11 +138,8 @@ class DictionaryService {
             return cached
         }
 
-        guard let prefixNode = trie.searchPrefix(prefix) else {
-            return []
-        }
-
-        let results = prefixNode.getAllWords(prefix: prefix, limit: limit).map {
+        guard let lexicon else { return [] }
+        let results = lexicon.words.topMatches(prefix: prefix, limit: limit).map {
             DictionaryMatch(word: $0.word, frequency: $0.frequency, type: .dictionary)
         }
 
@@ -163,28 +148,19 @@ class DictionaryService {
     }
 
     func searchSyllables(prefix: String, limit: Int = 5) -> [DictionaryMatch] {
-        guard let prefixNode = syllableTrie.searchPrefix(prefix) else {
-            return []
-        }
-
-        return prefixNode.getAllWords(prefix: prefix, limit: limit).map {
+        guard let lexicon else { return [] }
+        return lexicon.syllables.topMatches(prefix: prefix, limit: limit).map {
             DictionaryMatch(word: $0.word, frequency: $0.frequency, type: .syllable)
         }
     }
 
     // MARK: - Validation
 
+    /// A word or syllable in the dictionary. Two binary searches over mapped
+    /// bytes, cheaper than the NSCache lookup it replaced, so it is uncached.
     func isValidWord(_ text: String) -> Bool {
-        guard !text.isEmpty else { return false }
-
-        let key = text as NSString
-        if let cached = validWordCache.object(forKey: key) {
-            return cached.boolValue
-        }
-
-        let result = trie.contains(text) || syllableTrie.contains(text)
-        validWordCache.setObject(NSNumber(value: result), forKey: key)
-        return result
+        guard !text.isEmpty, let lexicon else { return false }
+        return lexicon.containsWord(text) || lexicon.containsSyllable(text)
     }
 
     /// Store bigram from user data for next-word prediction
@@ -201,23 +177,6 @@ class DictionaryService {
 }
 
 // MARK: - Data Structures
-
-struct DictionaryData: Codable {
-    let words: [WordEntry]
-    let syllables: [SyllableEntry]
-}
-
-struct WordEntry: Codable {
-    let word: String
-    let frequency: Int
-    // `category`/`meaning` exist in the source data but are unused when building the trie.
-    // Omitting them here means the decoder skips those keys, cutting the decode-peak memory.
-}
-
-struct SyllableEntry: Codable {
-    let syllable: String
-    let frequency: Int
-}
 
 class DictionaryMatch: NSObject {
     let word: String

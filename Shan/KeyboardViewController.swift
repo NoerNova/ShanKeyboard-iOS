@@ -12,6 +12,10 @@ import SwiftUI
 class KeyboardViewController: ShanKeyboardInputViewController {
     
     override func viewDidLoad() {
+        // Before any view renders: turns the CALayerInvalidGeometry (NaN bounds)
+        // crash into a logged, zero-sized frame. See LayerGeometryGuard.swift.
+        LayerGeometryGuard.install()
+        MemoryProbe.log("launch")
         setupServices()
         setupState()
         
@@ -20,19 +24,21 @@ class KeyboardViewController: ShanKeyboardInputViewController {
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
-        Tokenizer.shared.clearCache()
-        if let provider = services.autocompleteService as? AutocompleteServiceProvider {
-            provider.clearCaches()
-            provider.purgeHeavyModels()
-        }
+        MemoryProbe.log("memory warning")
+        flushCaches()
+        MemoryProbe.log("memory warning flushed")
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         // Release the cheap-to-rebuild caches when the keyboard is dismissed so memory
-        // doesn't accumulate across host-app switches. The heavy NGram model is left
-        // alone here (re-parsing it on every appearance would reintroduce the load peak);
-        // it is purged only under an actual memory warning.
+        // doesn't accumulate across host-app switches. The dictionary and n-gram
+        // model are memory-mapped files and cost no dirty memory, so they stay.
+        flushCaches()
+        MemoryProbe.log("dismissed")
+    }
+
+    private func flushCaches() {
         Tokenizer.shared.clearCache()
         if let provider = services.autocompleteService as? AutocompleteServiceProvider {
             provider.clearCaches()

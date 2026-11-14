@@ -3,3 +3,7 @@
 
 # Generated binary plist files (built from JSON sources)
 Shan/Autocomplete/Resource/*.plist
+
+Scripts/__pycache__/
+
+.claude/

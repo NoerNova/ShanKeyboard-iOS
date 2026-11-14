@@ -26,10 +26,10 @@ class ContextualSuggestionService {
         self.ngramService = ngramService
     }
 
-    func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+    func getSuggestions(for text: String, preferNextWord: Bool = false) -> [Autocomplete.Suggestion] {
         var suggestions: [Autocomplete.Suggestion] = []
 
-        suggestions.append(contentsOf: getContextualSuggestions(for: text))
+        suggestions.append(contentsOf: getContextualSuggestions(for: text, preferNextWord: preferNextWord))
 
         if suggestions.count < 3 {
             suggestions.append(contentsOf: getFallbackSuggestions(
@@ -43,32 +43,54 @@ class ContextualSuggestionService {
 
     // MARK: - NGram-backed contextual suggestions
 
-    private func getContextualSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+    private func getContextualSuggestions(for text: String, preferNextWord: Bool) -> [Autocomplete.Suggestion] {
         // Use NGram model if loaded
         if let ngram = ngramService, ngram.isLoaded {
-            return ngramContextualSuggestions(for: text, service: ngram)
+            return ngramContextualSuggestions(for: text, service: ngram, preferNextWord: preferNextWord)
         }
         return legacyGetContextualSuggestions(for: text)
     }
 
     private func ngramContextualSuggestions(
         for text: String,
-        service: NGramService
+        service: NGramService,
+        preferNextWord: Bool
     ) -> [Autocomplete.Suggestion] {
 
-        // `text` is already `currentWordPreCursorPart` — the partial word being typed.
-        // Pass it directly as the prefix filter; do NOT run it through
-        // getCurrentIncompleteWord(), which expects a full sentence.
+        // Normalise the same way DictionaryService does (getCurrentWord, not the
+        // Tokenizer, which mis-splits incomplete trailing words).
+        let partialNext = shanService.getCurrentWord(from: text)
         let context = dataManager.contextWindow  // up to 2 recent completed words
 
-        let candidates = service.scoredCandidates(
+        // Prefix completions of what the user typed. While mid-word they want
+        // completions (မႂ် → မႂ်ႇ, မႂ်ႈ, မႂ်း); compounds cover the
+        // "typed word is complete" case too (မႂ်ႇ → မႂ်ႇသုင်, မႂ်ႇမႂ်ႇ).
+        let completions: [Autocomplete.Suggestion] = service.scoredCandidates(
             context: context,
-            partialNext: text,
+            partialNext: partialNext,
             userBigramChain: dataManager.bigramChain,
             limit: 10
-        )
+        ).map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
 
-        return candidates.map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
+        // Next-word predictions when the typed word is itself complete.
+        var nextWords: [Autocomplete.Suggestion] = []
+        if !partialNext.isEmpty, dictionaryService.isValidWord(partialNext) {
+            let nextWordContext = Array((context + [partialNext]).suffix(2))
+            nextWords = service.scoredCandidates(
+                context: nextWordContext,
+                partialNext: "",
+                userBigramChain: dataManager.bigramChain,
+                limit: 5
+            ).map { Autocomplete.Suggestion(text: $0.word, type: .regular) }
+        }
+
+        // Ordering: completions first while typing — short Shan strings are
+        // almost always valid words themselves (မ, မႂ်), so leading with
+        // next-word would show bare followers (မ → သ) that look broken without
+        // their buffer. But right after a suggestion tap the word is CONFIRMED
+        // complete, so re-completing it reads as a stale bar — lead with
+        // next-word predictions instead.
+        return preferNextWord ? nextWords + completions : completions + nextWords
     }
 
     // MARK: - Legacy fallback (user bigram chain only)
@@ -95,8 +117,10 @@ class ContextualSuggestionService {
 
     // MARK: - Fallback suggestions (unigram frequency + grammar extensions)
 
-    private func getFallbackSuggestions(for text: String, excluding: Set<String>) -> [Autocomplete.Suggestion] {
+    private func getFallbackSuggestions(for rawText: String, excluding: Set<String>) -> [Autocomplete.Suggestion] {
         var suggestions: [Autocomplete.Suggestion] = []
+
+        let text = shanService.getCurrentWord(from: rawText)
 
         // Use top-frequency words from dictionary instead of hardcoded list
         let topWords = dictionaryService.topWords

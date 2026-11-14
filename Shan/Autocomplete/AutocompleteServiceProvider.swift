@@ -54,11 +54,14 @@ class AutocompleteServiceProvider: AutocompleteService {
 
         dataManager.loadAllData()
 
-        // Load sequentially to avoid a concurrent memory spike that terminates
-        // the extension on memory-constrained devices (iPhone 13/14, iOS 26+).
-        // DictionaryService first; NGramService starts only after it completes.
+        // Both models are memory-mapped (no decode peak), but load sequentially
+        // anyway: suggestions need the dictionary first, and the n-gram model is
+        // only useful once the tokenizer can build the context window.
         SharedResources.shared.dictionaryService.loadAsync { [weak self] in
             guard let self else { return }
+            // The tokenizer (backed by this dictionary) is only now usable, so the
+            // user's bigram chain — built empty during loadAllData() — can be rebuilt.
+            self.dataManager.rebuildBigramChain()
             self.suggestionCache.removeAllObjects()
             self.onModelLoaded?()
             self.ngramService.loadAsync { [weak self] in
@@ -68,14 +71,12 @@ class AutocompleteServiceProvider: AutocompleteService {
         }
     }
 
+    /// Drops every rebuildable cache. The dictionary and n-gram model are not
+    /// purged: they are clean file mappings that iOS reclaims by itself under
+    /// pressure, and purging them only cost suggestions until the next launch.
     func clearCaches() {
         suggestionCache.removeAllObjects()
-    }
-
-    /// Releases the NGram model (~15–25 MB) under severe memory pressure.
-    /// Suggestions fall back to DictionaryService until the next load cycle.
-    func purgeHeavyModels() {
-        ngramService.purge()
+        dictionaryService.clearCaches()
     }
 
     // MARK: - AutocompleteService Protocol
@@ -104,6 +105,12 @@ class AutocompleteServiceProvider: AutocompleteService {
         dataManager.unlearnWord(word)
     }
 
+    /// Word most recently accepted from the bar. While the buffer tail still
+    /// equals it, the bar leads with next-word predictions instead of
+    /// re-completing the word that was just confirmed. Cleared as soon as the
+    /// current word diverges (user typed, deleted, or moved on).
+    private var lastAcceptedSuggestionText: String?
+
     func autocomplete(_ text: String) async throws -> Autocomplete.ServiceResult {
         // When text is empty but context exists, show next-word predictions.
         // When text is empty and context is empty, nothing to show.
@@ -116,12 +123,18 @@ class AutocompleteServiceProvider: AutocompleteService {
             )
         }
 
-        let cacheKey = "\(text)||\(dataManager.contextWindow.joined(separator: "|"))" as NSString
+        let currentWord = SharedResources.shared.shanLanguageService.getCurrentWord(from: text)
+        let preferNextWord = lastAcceptedSuggestionText != nil && lastAcceptedSuggestionText == currentWord
+        if !preferNextWord { lastAcceptedSuggestionText = nil }
+
+        // The flag changes the result for identical text+context, so it must be
+        // part of the cache key.
+        let cacheKey = "\(preferNextWord ? "N|" : "")\(text)||\(dataManager.contextWindow.joined(separator: "|"))" as NSString
         if let cached = suggestionCache.object(forKey: cacheKey) {
             return cached.result
         }
 
-        let suggestions = getSuggestions(for: text)
+        let suggestions = getSuggestions(for: text, preferNextWord: preferNextWord)
         let characterPredictions = characterPrediction.getNextCharacterPredictions(for: text)
 
         let result = Autocomplete.ServiceResult(
@@ -144,16 +157,15 @@ class AutocompleteServiceProvider: AutocompleteService {
     //
     // Each slot gets the best candidate from its source that hasn't already
     // been claimed by an earlier slot. Fallbacks fill any remaining gaps.
-    private func getSuggestions(for text: String) -> [Autocomplete.Suggestion] {
+    private func getSuggestions(for text: String, preferNextWord: Bool = false) -> [Autocomplete.Suggestion] {
         let maxSuggestions = max(3, context.settings.suggestionsDisplayCount)
 
         // --- Gather candidates from each source ---
         let personalCandidates  = wordCompletion.getSuggestions(for: text)
-        let ngramCandidates     = contextualService.getSuggestions(for: text)
+        let ngramCandidates     = contextualService.getSuggestions(for: text, preferNextWord: preferNextWord)
         let dictionaryCandidates = dictionaryService.getDictionarySuggestions(for: text)
 
-        // Fallbacks used only to fill remaining gaps
-        let syllableCandidates  = dictionaryService.getSyllableSuggestions(for: text)
+        // Fallback used only to fill remaining gaps
         let spellCandidates: [Autocomplete.Suggestion] = (!text.isEmpty
             && !dictionaryService.isValidWord(text)
             && !dictionaryService.couldBeValidWordPrefix(text))
@@ -170,20 +182,58 @@ class AutocompleteServiceProvider: AutocompleteService {
             }
         }
 
+        func fill(from candidates: [Autocomplete.Suggestion]) {
+            for s in candidates {
+                guard ordered.count < maxSuggestions else { return }
+                if !seen.contains(s.text) {
+                    ordered.append(s)
+                    seen.insert(s.text)
+                }
+            }
+        }
+
         pickFirst(from: personalCandidates)   // slot 1
         pickFirst(from: ngramCandidates)       // slot 2
         pickFirst(from: dictionaryCandidates)  // slot 3
 
-        // Fill any remaining slots with fallbacks
-        for s in (ngramCandidates + dictionaryCandidates + syllableCandidates + spellCandidates) {
-            guard ordered.count < maxSuggestions else { break }
-            if !seen.contains(s.text) {
-                ordered.append(s)
-                seen.insert(s.text)
-            }
+        // Fill any remaining slots with fallbacks. Syllable suggestions are only
+        // computed when actually needed — previously they ran a syllable-trie
+        // search on every keystroke just to be discarded when slots were full.
+        fill(from: ngramCandidates + dictionaryCandidates)
+        if ordered.count < maxSuggestions {
+            fill(from: dictionaryService.getSyllableSuggestions(for: text))
+        }
+        fill(from: spellCandidates)
+
+        let deduplicated = deduplicateSuggestions(ordered, inputText: text)
+        return applyNativeBarLayout(to: deduplicated, inputText: text, maxSuggestions: maxSuggestions)
+    }
+
+    /// Mimics the native iOS bar: [ "literal" | best candidate | next best ].
+    /// The best candidate is NOT tagged .autocorrect: the native bar highlights
+    /// only real corrections, and these are predictions — so no highlight.
+    /// The literal shows only the word being typed, not the raw pre-cursor text —
+    /// Shan has no spaces between words, so the raw text is usually the whole line.
+    private func applyNativeBarLayout(to suggestions: [Autocomplete.Suggestion], inputText: String, maxSuggestions: Int) -> [Autocomplete.Suggestion] {
+        guard !inputText.isEmpty, let best = suggestions.first, best.text != inputText else {
+            return suggestions
         }
 
-        return deduplicateSuggestions(ordered, inputText: text)
+        // Same extraction pattern as DictionaryService: getCurrentWord first, the
+        // Tokenizer only as fallback (it mis-splits incomplete trailing words).
+        let currentWord = SharedResources.shared.shanLanguageService.getCurrentWord(from: inputText)
+        let literal = !currentWord.isEmpty
+            ? currentWord
+            : (Tokenizer.shared.getLastToken(from: inputText) ?? "")
+
+        // confidence gate if the highlight is too often wrong.
+        var result: [Autocomplete.Suggestion] = []
+        if !literal.isEmpty, literal != best.text {
+            result.append(Autocomplete.Suggestion(text: literal, type: .unknown))
+        }
+        result.append(Autocomplete.Suggestion(text: best.text, type: .regular, source: best.source))
+        result.append(contentsOf: suggestions.dropFirst())
+        return Array(result.prefix(maxSuggestions))
     }
 
     private func deduplicateSuggestions(_ suggestions: [Autocomplete.Suggestion], inputText: String) -> [Autocomplete.Suggestion] {
@@ -260,6 +310,7 @@ extension AutocompleteServiceProvider {
         guard !Self.isSensitiveTextField else { return }
         // learnWord is already called by KeyboardKit's tryAutolearnSuggestion → learn()
         dataManager.advanceContext(completedWord: suggestion.text)
+        lastAcceptedSuggestionText = suggestion.text
         suggestionCache.removeAllObjects()
     }
 
@@ -306,7 +357,10 @@ extension AutocompleteServiceProvider {
             contextToTokenize = documentContext
         }
 
-        let tokens  = Tokenizer.shared.tokenize(contextToTokenize).filter { !$0.isEmpty }
+        // Only the last 2 tokens are kept, so tokenize just the tail (100-char cap).
+        // Tokenizing the whole document here grew unboundedly with the text and
+        // missed the tokenization cache on every keystroke.
+        let tokens  = Tokenizer.shared.tokenizeLastPart(contextToTokenize).filter { !$0.isEmpty }
         let lastTwo = Array(tokens.suffix(2))
 
         guard lastTwo != dataManager.contextWindow else { return }

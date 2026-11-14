@@ -23,26 +23,7 @@ class CustomIPhoneService: KeyboardLayout.iPhoneLayoutService {
         if !needsInputSwitch { result.append(.keyboardType(.emojis)) }
         let dictationReplacement = context.keyboardDictationReplacement
         if isPortrait(context), needsDictation, let action = dictationReplacement { result.append(action) }
-        
-        /// Leave comment as template for future feature
-//        #if os(iOS) || os(tvOS) || os(visionOS)
-//        switch context.textDocumentProxy.keyboardType {
-//        case .emailAddress:
-//            result.append(.space)
-//            result.append(.character("@"))
-//            result.append(.character("."))
-//        case .URL:
-//            result.append(.character("."))
-//            result.append(.character("/"))
-//            result.append(.text(".com"))
-//        case .webSearch:
-//            result.append(.space)
-//            result.append(.character("."))
-//        default:
-//            result.append(.space)
-//        }
-//        #endif // os(iOS) || os(tvOS) || os(visionOS)
-        
+
         result.append(.space)
         
         result.append(keyboardReturnAction(for: context))

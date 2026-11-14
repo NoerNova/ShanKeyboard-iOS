@@ -30,11 +30,8 @@ public struct KeyboardToolbar: View {
     public var body: some View {
         HStack {
             if allowsAutocomplete() {
-                params.autocompleteToolbarStyle(
-                    .init(item:
-                            .init(titleFont: .custom("Shan", size: 17))
-                    )
-                )
+                // Override the service style.
+                params
             } else {
                 hideAutoCompleteView
             }

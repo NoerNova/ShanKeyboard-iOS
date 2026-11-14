@@ -9,8 +9,15 @@ import KeyboardKit
 import UIKit
 
 class ActionHandlerProvider: KeyboardAction.StandardActionHandler {
-    
+
     private static let sentenceBoundaryCharacters: Set<String> = ["။", "၊", ".", ","]
+
+    /// One-shot undo for the last accepted suggestion
+    private var pendingSuggestionUndo: (insertedScalars: Int, replacedText: String)?
+
+    /// Native iOS switches to word deletion around 2–2.5s of holding.
+    private var backspacePressStart: Date?
+    private static let backspaceTokenDeleteDelay: TimeInterval = 2.25
 
     override func handle(
         _ suggestion: Autocomplete.Suggestion
@@ -24,14 +31,50 @@ class ActionHandlerProvider: KeyboardAction.StandardActionHandler {
 
         // Get current input text to provide context for the suggestion
         let currentInput = keyboardContext.textDocumentProxy.customCurrentWord ?? ""
-        keyboardContext.customInsertAutocompleteSuggestion(suggestion, inputText: currentInput)
+
+        // .unknown suggestions also come from
+        // ContextualSuggestionService and CharacterPredictionService
+        let undo = keyboardContext.customInsertAutocompleteSuggestion(suggestion, inputText: currentInput)
         handle(.release, on: .character(""))
+        // Set AFTER the synthetic gesture above, which clears stale undo state.
+        pendingSuggestionUndo = undo
     }
 
     override func handle(
         _ gesture: Keyboard.Gesture,
         on action: KeyboardAction
     ) {
+        // Backspace acts on .press (so it can repeat); intercept before super deletes.
+        if gesture == .press, action == .backspace, let undo = pendingSuggestionUndo {
+            pendingSuggestionUndo = nil
+            let proxy = keyboardContext.textDocumentProxy
+            proxy.deleteBackward(times: undo.insertedScalars)
+            if !undo.replacedText.isEmpty { proxy.insertText(undo.replacedText) }
+            return
+        }
+        if gesture == .press { pendingSuggestionUndo = nil }
+
+        if action == .backspace {
+            switch gesture {
+            case .press:
+                backspacePressStart = Date()
+            case .release, .end:
+                backspacePressStart = nil
+            case .repeatPress:
+                if let start = backspacePressStart,
+                   Date().timeIntervalSince(start) >= Self.backspaceTokenDeleteDelay {
+                    let proxy = keyboardContext.textDocumentProxy
+                    let text = proxy.documentContextBeforeInput ?? ""
+                    if let token = Tokenizer.shared.getLastToken(from: text), !token.isEmpty {
+                        proxy.deleteBackward(times: token.unicodeScalars.count)
+                        return  // replaces this tick's single-character delete
+                    }
+                }
+            default:
+                break
+            }
+        }
+
         super.handle(gesture, on: action)
 
         // Reset context window at sentence boundaries
@@ -47,32 +90,30 @@ class ActionHandlerProvider: KeyboardAction.StandardActionHandler {
         before gesture: Keyboard.Gesture,
         on action: KeyboardAction
     ) {
-        guard shouldApplyAutocorrectSuggestion(before: gesture, on: action) else { return }
-        let suggestions = autocompleteContext.suggestions
-        let autocorrect = suggestions.first { $0.isAutocorrect }
-        guard let suggestion = autocorrect else { return }
-        
-        let currentInput = keyboardContext.textDocumentProxy.customCurrentWord ?? ""
-        keyboardContext.customInsertAutocompleteSuggestion(
-            suggestion,
-            inputText: currentInput,
-            tryInsertSpace: false
-        )
+        // Highlight-only autocorrect by design: the .autocorrect tag drives the
+        // toolbar highlight, but space/punctuation never auto-replaces the word.
+        // The user must tap the suggestion.
     }
 }
 
+/// What a suggestion insertion changed, so a following backspace can undo it.
+typealias SuggestionUndo = (insertedScalars: Int, replacedText: String)
+
 private extension KeyboardContext {
-    
+
+    @discardableResult
     func customInsertAutocompleteSuggestion(
         _ suggestion: Autocomplete.Suggestion,
         inputText: String = "",
         tryInsertSpace: Bool = false
-    ) {
+    ) -> SuggestionUndo {
         #if os(iOS) || os(tvOS) || os(visionOS)
-        textDocumentProxy.customInsertAutocompleteSuggestion(
+        return textDocumentProxy.customInsertAutocompleteSuggestion(
             suggestion,
             inputText: inputText,
             tryInsertSpace: tryInsertSpace)
+        #else
+        return (0, "")
         #endif
     }
 }
@@ -92,24 +133,35 @@ private extension UITextDocumentProxy {
         return word.isEmpty ? prePost : word
     }
     
+    @discardableResult
     func customInsertAutocompleteSuggestion(
         _ suggestion: Autocomplete.Suggestion,
         inputText: String,
         tryInsertSpace: Bool = true
-    ) {
-        insertProcessedSuggestion(suggestion.text, inputText: inputText)
-        guard tryInsertSpace else { return }
-        tryInsertSpaceAfterAutocomplete()
+    ) -> SuggestionUndo {
+        let undo = insertProcessedSuggestion(suggestion.text, inputText: inputText)
+        if tryInsertSpace { tryInsertSpaceAfterAutocomplete() }
+        return undo
     }
-    
-    private func insertProcessedSuggestion(_ suggestionText: String, inputText: String) {
+
+    private func insertProcessedSuggestion(_ suggestionText: String, inputText: String) -> SuggestionUndo {
+        // A suggestion identical to the current word is a reduplication tap
+        // (မႂ်ႇ → မႂ်ႇမႂ်ႇ is normal Shan). The replace path would delete and
+        // re-insert the same scalars — a no-op the user reads as a dead button —
+        // so append a second copy instead.
+        if !inputText.isEmpty, suggestionText.unicodeScalars.elementsEqual(inputText.unicodeScalars) {
+            insertText(suggestionText)
+            return (suggestionText.unicodeScalars.count, "")
+        }
+
         // Determine if this is a completion suffix or a full word replacement
         if isCompletionSuffix(suggestionText, for: inputText) {
             // Just append the completion part
             insertText(suggestionText)
+            return (suggestionText.unicodeScalars.count, "")
         } else {
             // Replace the entire current word
-            customReplaceCurrentWordPreCursorPart(with: suggestionText)
+            return customReplaceCurrentWordPreCursorPart(with: suggestionText)
         }
     }
     
@@ -147,7 +199,8 @@ private extension UITextDocumentProxy {
         return false
     }
     
-    func customReplaceCurrentWordPreCursorPart(with replacement: String) {
+    @discardableResult
+    func customReplaceCurrentWordPreCursorPart(with replacement: String) -> SuggestionUndo {
         let preCursor = currentWordPreCursorPart ?? ""
         let preScalars = Array(preCursor.unicodeScalars)
         let repScalars = Array(replacement.unicodeScalars)
@@ -166,11 +219,15 @@ private extension UITextDocumentProxy {
             }
         }
 
+        var replaced = ""
         if overlapLength > 0 {
             deleteBackward(times: overlapLength)
+            replaced = String(String.UnicodeScalarView(preScalars.suffix(overlapLength)))
         } else if let text = customCurrentWord {
             deleteBackward(times: text.unicodeScalars.count)
+            replaced = text
         }
         insertText(replacement)
+        return (repScalars.count, replaced)
     }
 }

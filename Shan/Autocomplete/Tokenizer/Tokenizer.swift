@@ -9,56 +9,21 @@ import Foundation
 
 public class Tokenizer {
 
-    private var dictionaryTrie = TrieNode()
-    private var maxWordLength: Int = 0
-    private var isLoaded = false
+    // The tokenizer shares DictionaryService's memory-mapped lexicon, so it
+    // adds no copy of the word list. DictionaryService swaps the lexicon in on
+    // the main thread and tokenize() callers run on main.
+    private var dictionary: DictionaryService { SharedResources.shared.dictionaryService }
+    private var maxWordLength: Int { dictionary.maxWordLength }
+    private var isLoaded: Bool { dictionary.isLoaded }
 
     // LRU cache using NSCache (auto-evicts under memory pressure)
     private var tokenizationCache = NSCache<NSString, TokenizationCacheEntry>()
+    private var splitCache = NSCache<NSString, TokenizationCacheEntry>()
 
     init() {
         let lowRAM = ProcessInfo.processInfo.physicalMemory < 5_368_709_120
         tokenizationCache.countLimit = lowRAM ? 50 : 200
-        // Load on a background queue so init() does not block the main thread.
-        // tokenize() returns [] until loading completes, which is safe for all callers.
-        DispatchQueue.global(qos: .utility).async { [weak self] in
-            self?.loadDictionary()
-        }
-    }
-
-    private func loadDictionary() {
-        guard let path = Bundle.main.path(forResource: "dictionary", ofType: "txt") else {
-            return
-        }
-
-        do {
-            // autoreleasepool drains the parsed file string + word array as soon as the
-            // trie is built, so they don't stay resident alongside the finished trie.
-            let (newTrie, newMaxLength): (TrieNode, Int) = try autoreleasepool {
-                let content = try String(contentsOfFile: path, encoding: .utf8)
-                let words = content.components(separatedBy: .newlines)
-                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-                    .filter { !$0.isEmpty }
-
-                let trie = TrieNode()
-                var maxLength = 0
-                for word in words {
-                    trie.insert(word, frequency: 1)
-                    maxLength = max(maxLength, word.count)
-                }
-                return (trie, maxLength)
-            }
-            // Swap onto main thread to avoid data races with tokenize() callers.
-            DispatchQueue.main.async { [weak self] in
-                guard let self else { return }
-                self.dictionaryTrie = newTrie
-                self.maxWordLength = newMaxLength
-                self.isLoaded = true
-            }
-        } catch {
-            // Silently fail — dictionary loading errors are non-recoverable
-            // and logging in a keyboard extension is a privacy concern
-        }
+        splitCache.countLimit = lowRAM ? 50 : 200
     }
 
     // MARK: - Public API
@@ -76,10 +41,32 @@ public class Tokenizer {
         return tokens
     }
 
+    /// Splits a dictionary entry into its known constituent words, e.g.
+    /// "ၵတ်းသၼ်ႇၵတ်းၼၢဝ်" -> ["ၵတ်းသၼ်ႇ", "ၵတ်းၼၢဝ်"]. Returns nil unless every
+    /// piece is itself a real dictionary word — a split that falls back to a raw
+    /// character the dictionary can't explain is rejected rather than shown.
+    public func splitCompoundWord(_ word: String) -> [String]? {
+        guard isLoaded, word.unicodeScalars.count >= 4 else { return nil }
+
+        let key = word as NSString
+        if let cached = splitCache.object(forKey: key) {
+            return cached.tokens.isEmpty ? nil : cached.tokens
+        }
+
+        let tokens = maximalMatching(word, excludeFullMatch: true)
+        let dictionary = self.dictionary
+        let isCleanSplit = tokens.count >= 2 && tokens.allSatisfy { dictionary.containsWord($0) }
+        let result = isCleanSplit ? tokens : []
+        splitCache.setObject(TokenizationCacheEntry(result), forKey: key)
+        return isCleanSplit ? tokens : nil
+    }
+
     /// Maximal matching via dynamic programming.
     /// Finds the segmentation that minimizes the total number of tokens
     /// (preferring longer dictionary words over single-character fallbacks).
-    private func maximalMatching(_ text: String) -> [String] {
+    private func maximalMatching(_ text: String, excludeFullMatch: Bool = false) -> [String] {
+        let dictionary = self.dictionary
+        let maxWordLength = self.maxWordLength
         let chars = Array(text)
         let n = chars.count
 
@@ -100,13 +87,14 @@ public class Tokenizer {
             }
 
             // Option 2: try all dictionary words ending at position i
-            let maxLen = min(maxWordLength, i)
+            let upperBound = (excludeFullMatch && i == n) ? n - 1 : i
+            let maxLen = min(maxWordLength, upperBound)
             guard maxLen >= 2 else { continue }
             for len in 2...maxLen {
                 let start = i - len
                 guard cost[start] != Int.max else { continue }
                 let substring = String(chars[start..<i])
-                if dictionaryTrie.contains(substring) {
+                if dictionary.containsWord(substring) {
                     let newCost = cost[start] + 1
                     if newCost < cost[i] || (newCost == cost[i] && len > (i - parent[i])) {
                         cost[i] = newCost
@@ -134,12 +122,12 @@ public class Tokenizer {
     }
 
     public func wordExists(_ word: String) -> Bool {
-        return dictionaryTrie.contains(word)
+        return dictionary.containsWord(word)
     }
 
     /// Check if a string could be the start of a valid dictionary word
     public func isValidPrefix(_ prefix: String) -> Bool {
-        return dictionaryTrie.hasPrefix(prefix)
+        return dictionary.isWordPrefix(prefix)
     }
 
     public func getDictionaryStats() -> (wordCount: Int, maxLength: Int, isLoaded: Bool) {
@@ -148,6 +136,7 @@ public class Tokenizer {
 
     public func clearCache() {
         tokenizationCache.removeAllObjects()
+        splitCache.removeAllObjects()
     }
 }
 
@@ -166,8 +155,8 @@ extension Tokenizer {
     }
 
     public func findWordsStartingWith(_ prefix: String, limit: Int = 10) -> [String] {
-        guard !prefix.isEmpty, let node = dictionaryTrie.searchPrefix(prefix) else { return [] }
-        return node.getAllWords(prefix: prefix, limit: limit).map { $0.word }
+        guard !prefix.isEmpty else { return [] }
+        return dictionary.searchWords(prefix: prefix, limit: limit).map { $0.word }
     }
 }
 

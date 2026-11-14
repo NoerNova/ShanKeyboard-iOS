@@ -89,7 +89,7 @@ class SpellCorrectionService {
         }
 
         // Transpositions
-        for i in 0..<n - 1 {
+        for i in 0..<max(0, n - 1) {
             var modified = chars
             modified.swapAt(i, i + 1)
             let candidate = modified.joined()
@@ -156,6 +156,9 @@ class SpellCorrectionService {
         let b = ShanGrammarRules.scalarChars(s2)
         let m = a.count
         let n = b.count
+        // 1...0 traps, so handle empty strings before building the table.
+        guard m > 0 else { return Double(n) }
+        guard n > 0 else { return Double(m) }
 
         var dp = Array(repeating: Array(repeating: 0.0, count: n + 1), count: m + 1)
 
